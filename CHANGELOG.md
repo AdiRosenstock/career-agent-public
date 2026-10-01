@@ -12,3 +12,11 @@
 - Kept personal state and application artifacts outside the public source tree.
 
 This release uses a clean public source history. Private development history and candidate data are not part of the public distribution.
+
+### Shared agent setup
+
+- Added Claude Code instructions/skill discovery alongside Codex, plus provider-aware dashboard prompts.
+- Added first-run setup and read-only diagnostics, with explicit refusal to overwrite existing configuration.
+- Documented bring-your-own storage, agent accounts and MCP servers; made graduation input editable.
+
+- Removed personal branding from the README, package metadata and license attribution.

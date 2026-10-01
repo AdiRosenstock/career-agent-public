@@ -39,13 +39,18 @@ export async function openRuntime() {
  return {store,engine};
 }
 export type Runtime=Awaited<ReturnType<typeof openRuntime>>;
-export function codexPrompt(mode:string,batchId?:string) {
+function workflowPrompt(mode:string,batchId?:string) {
  if(mode==='accounts') return `Use $job-application-agent in ${workspace}. Check the authorized email connector and signed-in LinkedIn and Handshake sessions for previous applications and suitable 2027 US full-time new-grad jobs. Read application confirmations, not marketing or suggested jobs. Import verified prior applications with source references and exclude exact matching jobs. Never infer that an entire employer is already applied to. Use the saved salary minimum and compensation basis, keep unverified pay in research, and exclude internships. If sign-in or connector access is missing, report the missing connection. Do not submit applications, send messages, or change account settings.`;
  if(mode==='submit') {
   if(!batchId) throw new Error('Choose an approved batch first.');
   return `Use $job-application-agent in ${workspace}. Submit only the approved application batch ${batchId}. Read the submission workflow and exact approved packets, refresh each job and inspect its hosted form, preserve the original résumé, and record an attempt before clicking Submit. Stop for changed content or missing answers. Record confirmation evidence; never retry an uncertain submission.`;
  }
  return `Use $job-application-agent in ${workspace}. First finish existing Needs answers packets: apply newly confirmed profile facts and exact saved answers, inspect or recheck hosted forms, complete every factual answer that the saved sources support, and remove review notes only when actually resolved. Surface a short grouped list of genuinely personal choices or employer declarations that the candidate still needs to answer; do not guess or mark them confirmed. Then run today's discovery and preparation workflow, with at most 20 new applications across all runs today. Prioritize 2027 US full-time new-grad, graduate, and entry-level PM/APM and data roles, and cover Forward Deployed Engineer, wealth and asset management, sales and trading, consulting, and SWE. Exclude internships and follow the saved annual compensation minimum and basis; keep unknown pay in research. Check authorized email and account history for exact prior applications before preparing. Check sponsorship evidence, preserve the original résumé and supporting PDFs, and save only complete packets to Ready to review. Do not submit applications. Notify only if a new reviewable batch or user action is ready.`;
+}
+export function codexPrompt(mode: string, batchId?: string, provider: string = 'codex'): string {
+ if (!['codex', 'claude'].includes(provider)) throw new Error('Agent provider must be codex or claude.');
+ const prompt = workflowPrompt(mode, batchId);
+ return provider === 'claude' ? prompt.replaceAll('$job-application-agent', '/job-application-agent').replaceAll('Codex', 'Claude Code') : prompt;
 }
 export function dayKey(date=new Date()) {return new Intl.DateTimeFormat('en-CA',{timeZone:'America/Chicago',year:'numeric',month:'2-digit',day:'2-digit'}).format(date);}
 let discoveryRunning=false;

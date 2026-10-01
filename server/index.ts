@@ -47,7 +47,10 @@ app.get('/api/resume',route(async(_req,res)=>{
  res.setHeader('Content-Disposition',`inline; filename="${filename.replace(/[^a-zA-Z0-9 ._()-]/g, '_')}"; filename*=UTF-8''${encodeURIComponent(filename)}`);res.sendFile(snapshot.profile.resume.path, {dotfiles: 'allow'});
 }));
 app.get('/api/export',route(async(_req,res)=>{await backupState(rt);res.setHeader('Content-Disposition','attachment; filename="career-agent-backup.json"');res.json(await rt.store.read());}));
-app.get('/api/codex-prompt',route(async(req,res)=>res.json({prompt:codexPrompt(String(req.query.mode||'prepare'),req.query.batchId?String(req.query.batchId):undefined)})));
+const promptRoute = route(async(req,res)=>res.json({prompt:codexPrompt(String(req.query.mode||'prepare'),req.query.batchId?String(req.query.batchId):undefined,z.enum(['codex','claude']).parse(req.query.provider||'codex'))}));
+app.get('/api/agent-prompt', promptRoute);
+app.get('/api/codex-prompt', promptRoute); // Compatibility for existing clients.
+
 app.post('/api/discover',route(async(_req,res)=>res.json(await runDiscovery(rt,{prepare:true}))));
 app.post('/api/jobs/import',route(async(req,res)=>res.json(await importJob(rt,z.object({url:z.string().max(4096),company:z.string().max(300).optional(),title:z.string().max(500).optional(),location:z.string().max(500).optional(),description:z.string().max(100000).optional()}).parse(req.body)))));
 app.post('/api/jobs/:id/dismiss',route(async(req,res)=>{
@@ -63,12 +66,12 @@ app.post('/api/packets/:id/edit',route(async(req,res)=>{
  res.json(await rt.engine.editPacket(String(req.params.id),input));
 }));
 app.post('/api/approvals',route(async(req,res)=>{
- const {packetIds}=z.object({packetIds:z.array(z.string()).min(1).max(100)}).parse(req.body);
- const approved=await rt.engine.approve(packetIds);res.json({...approved,approved:approved.packetIds.length,prompt:codexPrompt('submit',approved.batchId)});
+ const {packetIds,provider}=z.object({packetIds:z.array(z.string()).min(1).max(100),provider:z.enum(['codex','claude']).default('codex')}).parse(req.body);
+ const approved=await rt.engine.approve(packetIds);res.json({...approved,approved:approved.packetIds.length,prompt:codexPrompt('submit',approved.batchId,provider)});
 }));
 app.post('/api/profile',route(async(req,res)=>{
  const booleanAnswer=z.boolean().nullable();
- const input=z.object({name:z.string().min(1).max(300).optional(),email:z.email().optional(),phone:z.string().max(100).optional(),linkedin:z.union([z.url(),z.literal('')]).optional(),github:z.union([z.url(),z.literal('')]).optional(),visaStatus:z.string().max(200).optional(),anticipatedOPT:z.boolean().optional(),earliestStart:z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),salaryPreference:z.string().max(500).nullable().optional(),authorizationNow:booleanAnswer.optional(),authorizationAtStart:booleanAnswer.optional(),futureSponsorship:booleanAnswer.optional(),authorizationConfirmedAt:z.string().nullable().optional(),savedAnswers:z.array(z.object({id:z.string(),question:z.string().min(1).max(3000),answer:z.string().max(15000),confirmedAt:z.string()})).max(500).optional()}).parse(req.body);
+ const input=z.object({name:z.string().min(1).max(300).optional(),email:z.email().optional(),phone:z.string().max(100).optional(),linkedin:z.union([z.url(),z.literal('')]).optional(),github:z.union([z.url(),z.literal('')]).optional(),graduation:z.string().regex(/^$|^\d{4}-(?:0[1-9]|1[0-2])$/).optional(),visaStatus:z.string().max(200).optional(),anticipatedOPT:z.boolean().optional(),earliestStart:z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),salaryPreference:z.string().max(500).nullable().optional(),authorizationNow:booleanAnswer.optional(),authorizationAtStart:booleanAnswer.optional(),futureSponsorship:booleanAnswer.optional(),authorizationConfirmedAt:z.string().nullable().optional(),savedAnswers:z.array(z.object({id:z.string(),question:z.string().min(1).max(3000),answer:z.string().max(15000),confirmedAt:z.string()})).max(500).optional()}).parse(req.body);
  res.json(await rt.engine.updateProfile(input));
 }));
 app.post('/api/settings',route(async(req,res)=>{

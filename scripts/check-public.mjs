@@ -13,7 +13,7 @@ const checks=[
 ];
 const failures=[];
 for(const file of files){
- if(file!=='.env.example'&&prohibited.test(file)){failures.push(`${file}: private/generated file tracked`);continue;}
+ if(file!=='.env.example'&&(prohibited.test(file)||['.mcp.json','.codex/config.toml','.claude/settings.local.json','CLAUDE.local.md'].includes(file))){failures.push(`${file}: private/generated file tracked`);continue;}
  if(!ref&&!existsSync(file))continue;
  const bytes=ref?execFileSync('git',['show',`${ref}:${file}`],{maxBuffer:32*1024*1024}):readFileSync(file);
  if(bytes.includes(0))continue;

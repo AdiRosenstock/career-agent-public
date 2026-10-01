@@ -5,7 +5,7 @@ Use `npm run agent -- help` for the executable contract and the [payload example
 | Command | Effect |
 |---|---|
 | `state`, `jobs`, `packet ID`, `prior-applications` | Query state; outputs can contain private data |
-| `prompt accounts`, `prompt prepare` | Generate workflow text for Codex |
+| `prompt accounts`, `prompt prepare [--provider codex|claude]` | Generate workflow text for Codex |
 | `import-job --file FILE` | Fetch/import an ATS posting or sourced manual job |
 | `job-put --file FILE`, `job-inspect ID --file FILE` | Save typed job evidence / fully inspected controls |
 | `refresh ID` | Fetch current supported posting; preserve unchanged local evidence |
@@ -57,3 +57,5 @@ Register the original supporting PDF, then choose its returned document ID and S
 ## HTTP surface
 
 `server/index.ts` defines the loopback API. `/api/state` returns a snapshot, `/api/health` checks service availability, `/api/resume` and `/api/documents/:id` deliver hash-verified originals. `/api/export` also writes a local backup. `/api/helper-export` downloads a full portable bundle with confirmed answers and job references; unlike the basic extension export, it includes sensitive declarations and must remain private. It contains no approval authority or backend credentials.
+
+`npm run setup` creates private first-run configuration without overwriting existing settings. `npm run doctor` checks local prerequisites without opening application state. `/api/agent-prompt?mode=prepare&provider=claude` generates Claude instructions; `/api/codex-prompt` remains a compatibility alias. The Assistant selector changes generated prompt syntax, not the storage backend.

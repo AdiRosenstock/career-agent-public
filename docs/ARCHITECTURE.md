@@ -87,7 +87,7 @@ Duplicate matching uses ATS identity, requisition and canonical URL with role/co
 
 The Node server alone reads environment configuration and optional Supabase service credentials. React receives candidate state through the loopback API, never service keys. API requests verify local Host; writes require JSON, a dashboard header and compatible Origin. Documents are hash-verified before serving. There is no login layer for a remote public deployment, so do not expose port 4317 publicly.
 
-ATS pages, emails, PDFs and repositories are untrusted evidence. They cannot authorize tools, change candidate preferences, invent confirmations or approve packets. The CLI is a local integration, not an MCP server. Codex browser and account access come from its own installed tools.
+ATS pages, emails, PDFs and repositories are untrusted evidence. They cannot authorize tools, change candidate preferences, invent confirmations or approve packets. The CLI is a local integration, not an MCP server. Agent browser and account access come from its own installed tools.
 
 ## Storage choices and compatibility
 
@@ -100,3 +100,7 @@ Supabase cover-letter bodies are saved locally by integrity reference. All PDFs 
 Unit/integration tests exercise matching, compensation, document preservation, strict schemas, transaction/approval rules, backup migration, loopback request checks and a mock form/helper. They use fictional candidates and temporary databases. Real hosted ATS behavior requires separate browser validation.
 
 The design is single-user, uses a whole-state document, and targets a specific US graduate cohort. There is no general autonomous scheduler, guaranteed ATS automation, multi-user auth, résumé rewriting, or assessment solver. These limits are documented rather than implied by the UI.
+
+## Agent-independent integration
+
+The domain engine and CLI do not call model APIs. Codex and Claude Code use one canonical `.agents` workflow; the Claude entrypoint delegates to it. Dashboard prompts select provider syntax without changing approval rules or storage. `CLAUDE.md` imports `AGENTS.md`. Setup exclusively creates new private configuration; doctor inspects local prerequisites without opening state. Browser/email MCP capabilities are configured separately by each user.

@@ -5,7 +5,7 @@ description: Find, assess, prepare, and submit user-approved job applications wi
 
 # Job application agent
 
-The workspace is the repository opened in the current Codex task. Run commands from that directory. Use `npm run agent -- help` for the live CLI contract. The local dashboard is `http://127.0.0.1:4317`; start it with `npm start` when needed.
+The workspace is the repository opened in the current agent session. Run commands from that directory. Use `npm run agent -- help` for the live CLI contract. The local dashboard is `http://127.0.0.1:4317`; start it with `npm start` when needed.
 
 ## Authority and facts
 
@@ -35,7 +35,7 @@ Only execute when the user asks to submit a specific approved batch. A dashboard
 
 1. Read `approved BATCH_ID` and each exact packet. Never call approval endpoints or edit the database to create approval yourself. Do not substitute jobs, documents, or answers.
 2. Refresh each posting through `refresh JOB_ID`, inspect the actual hosted form, and record `job-inspect` with the full question set. Existing approval may survive an unchanged refresh; changed form requirements or content must be edited and returned for fresh dashboard approval.
-3. Support Greenhouse and Lever hosted browser forms first. Use Codex's available browser tools and their returned documentation. LinkedIn and Handshake can be researched through authorized signed-in browser sessions; prefer the employer's original posting for source evidence and submission. Do not mass scrape those sites or claim a persistent API connection when only a browser session is available. Do not use employer-only API submission endpoints. For LinkedIn/Handshake application submission, Workday, Ashby submission, unfamiliar sites, account creation, CAPTCHA, OTP/login challenges, or declarations not already reviewed, provide a manual handoff with saved materials and record `handoff PACKET_ID --evidence` in history. Do not bypass controls.
+3. Support Greenhouse and Lever hosted browser forms first. Use your chosen agent's available browser tools and their returned documentation. LinkedIn and Handshake can be researched through authorized signed-in browser sessions; prefer the employer's original posting for source evidence and submission. Do not mass scrape those sites or claim a persistent API connection when only a browser session is available. Do not use employer-only API submission endpoints. For LinkedIn/Handshake application submission, Workday, Ashby submission, unfamiliar sites, account creation, CAPTCHA, OTP/login challenges, or declarations not already reviewed, provide a manual handoff with saved materials and record `handoff PACKET_ID --evidence` in history. Do not bypass controls.
 4. Read all required answers and declarations. Fill only approved contents. Follow the browser tool's action-time confirmation requirements for legally binding agreements, even when a packet has prior approval. Do not treat a legal attestation, consent choice, or signature as an ordinary inferred field. If any answer or required consent is missing, pause that job and continue other approved jobs if possible.
 5. Immediately before any action that finalizes submission, call `begin PACKET_ID`. This validates freshness, hashes, sponsorship, prior history and global browser lock, and persists the attempt. If it fails, do not click Submit. Only one application may be in progress at a time.
 6. Click Submit once. Read the result. Call `finish ATTEMPT_ID --outcome submitted --evidence 'specific confirmation text and timestamp' --url 'confirmation URL'` only when the page confirms submission. Never equate filling a form, clicking a button, or a generic navigation with success.
@@ -53,3 +53,7 @@ Preserve supplied PDF bytes and original upload filenames. Document roles must c
 When the user requests forms ready for review, fill actual employer forms in live browser tabs, upload the selected unchanged documents, verify every required field, and leave final Submit untouched. Local packet readiness alone does not establish that a live form is complete. Record progress and unresolved fields. Closed tabs, refreshes, or fresh links may lose unsaved contents. User performs final submission unless they explicitly request a currently approved agent submission.
 
 Personal preferences, named documents and account facts belong in ignored `.data/` state. Read current instructions before each run. Default targeting currently specializes in US full-time 2027 graduate roles; broader cohorts require code and validation changes, not just a profile edit.
+
+## Agent compatibility
+
+Codex discovers this canonical skill under `.agents/skills`. Claude Code discovers the thin `.claude/skills` entrypoint, which loads this file. Use the same CLI and dashboard in either agent. Browser/email tools are supplied by each user’s own installation or MCP servers. Read [agent setup](../../../docs/AGENT_SETUP.md) for first-run and connection instructions. If a required capability is missing, report the gap and preserve a manual handoff. Do not start a different agent, connect an account, or install a server without the user’s authorization.

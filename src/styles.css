@@ -4279,3 +4279,6 @@ summary:focus-visible {
   font-size: 24px;
   margin: 8px 0;
 }
+
+.agent-choice { display:flex; flex-direction:column; gap:7px; font-size:11px; color:#74737f; margin-bottom:12px; }
+.agent-choice select { width:100%; background:#fff; color:#53515f; border:1px solid #dedde6; padding:7px 9px; border-radius:5px; font-size:12px; }

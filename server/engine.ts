@@ -268,6 +268,7 @@ function refreshPacket(s: AppState, p: ApplicationPacket, now: Date, extra?: str
 }
 function requireEligible(job: Job, now: Date): void { const problems = eligibilityReasons(job, now); if (problems.length) throw new AgentError(`Job is not eligible: ${problems.join('; ')}`); }
 function requireApplicationPolicy(s: AppState, job: Job): void {
+ if (s.profile.graduation !== '2027-06') throw new AgentError('Automated preparation currently supports June 2027 graduation. Confirm your actual date; other cohorts need manual review and updated matching rules.');
  if (priorMatches(s, job).length) throw new AgentError('A prior application is already recorded for this role; do not apply again');
  const reviews = priorReviewReasons(s, job); if (reviews.length) throw new AgentError(reviews.join('; '));
  const problems = compensationEligibilityReasons(job, s.settings.minimumAnnualCompensation ?? null, s.settings.compensationBasis ?? 'base');

@@ -26,3 +26,9 @@ test-results/
 *.tar
 *.tar.gz
 *.bundle
+
+# Agent accounts, MCP secrets and personal instructions
+CLAUDE.local.md
+.mcp.json
+.claude/settings.local.json
+.codex/config.toml

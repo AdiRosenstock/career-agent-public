@@ -658,3 +658,10 @@ test('dashboard applied marker persists, is idempotent and protects only the mat
  assert.deepEqual((await createEngine(store,{now:()=>NOW}).snapshot()).meta.appliedJobIds,['one']);
  await assert.rejects(engine.markAlreadyApplied('missing'),/not found/i);
 });
+
+// Matching still specializes in June 2027; never silently apply it to another candidate cohort.
+test('unsupported or unconfirmed candidate cohorts cannot use automatic preparation', async t => {
+ const {engine,store}=await fixture(t);await engine.upsertJob(job());
+ for (const graduation of ['', '2028-05']) {await engine.updateProfile({graduation});await assert.rejects(engine.prepare('one'),/supports June 2027/);assert.equal((await store.read()).packets.length,0);}
+ await engine.updateProfile({graduation:'2027-06'});assert.equal((await engine.prepare('one')).jobId,'one');
+});

@@ -10,7 +10,9 @@
     "test": "tsx --test tests/*.test.ts",
     "agent": "tsx server/cli.ts",
     "demo": "tsx server/demo.ts",
-    "check:public": "node scripts/check-public.mjs"
+    "check:public": "node scripts/check-public.mjs",
+    "setup": "node scripts/setup.mjs",
+    "doctor": "node scripts/doctor.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.0",
@@ -34,8 +36,7 @@
     "typescript": "^5.9.2",
     "vite": "^7.1.7"
   },
-  "description": "Local-first job application workspace with evidence-backed research and human review.",
-  "author": "Adi Rosenstock",
+  "description": "Open-source job application workspace for Codex and Claude Code, with private storage and human review.",
   "license": "MIT",
   "engines": {
     "node": ">=22.16.0"
