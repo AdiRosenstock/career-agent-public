@@ -163,3 +163,13 @@ A GitHub clone restores **code**, not your candidate state. Back up the active s
 ## License
 
 [MIT](LICENSE). You can use, modify, and share the code subject to the license. Employer sites retain their own terms; this project grants no permission to bypass their controls.
+
+## About the creator
+
+<img src="https://fplbanterboost.com/founder/adi-rosenstock.webp" alt="Adi Rosenstock wearing a Club Sport Cartaginés shirt" width="240" />
+
+Career Agent was created by **Adi Rosenstock**, a Costa Rican student studying Data Science and Economics at Northwestern University and the creator of [BanterBoost](https://fplbanterboost.com). It grew out of a personal application workflow and is open source so others can use their own documents, profile, storage, and agent tools.
+
+The architecture keeps candidate data private, checks original document integrity, shares one workflow across Codex and Claude Code, and requires current approval before submission. Read the [architecture decisions](docs/ARCHITECTURE.md) for implementation details.
+
+Biography and portrait: [BanterBoost About page](https://fplbanterboost.com/about). The portrait is hosted there and is not covered by this repository's software license. Creator attribution does not supply application answers or identify the current workspace user.

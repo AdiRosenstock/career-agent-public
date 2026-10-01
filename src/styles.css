@@ -4282,3 +4282,13 @@ summary:focus-visible {
 
 .agent-choice { display:flex; flex-direction:column; gap:7px; font-size:11px; color:#74737f; margin-bottom:12px; }
 .agent-choice select { width:100%; background:#fff; color:#53515f; border:1px solid #dedde6; padding:7px 9px; border-radius:5px; font-size:12px; }
+
+.creator-about { display: grid; grid-template-columns: minmax(240px, 340px) minmax(0, 620px); gap: 48px; align-items: start; padding: 20px 0 36px; }
+.creator-portrait { width: 100%; height: 440px; object-fit: cover; border-radius: 10px; background: var(--line); }
+.creator-story h2 { font-size: 28px; margin: 0 0 20px; letter-spacing: -.7px; }
+.creator-story h3 { margin-top: 28px; font-size: 18px; }
+.creator-story p { font-size: 16px; line-height: 1.75; margin: 0 0 18px; }
+.creator-story a { color: var(--forest); text-underline-offset: 4px; }
+.creator-links { display: flex; flex-wrap: wrap; gap: 24px; margin: 26px 0; }
+.creator-story p.small { font-size: 12px; }
+@media(max-width: 800px) { .creator-about { grid-template-columns: 1fr; gap: 28px; } .creator-portrait { max-width: 340px; } }
