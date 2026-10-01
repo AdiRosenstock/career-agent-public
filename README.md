@@ -308,6 +308,17 @@ See [architecture](docs/ARCHITECTURE.md) and [design decisions](docs/DESIGN_DECI
 | [Contributing](CONTRIBUTING.md) | Development, validation, privacy and pull requests |
 | [Security](SECURITY.md) | Local-only deployment and private vulnerability reporting |
 
+## Help make Career Agent better
+
+**Contributions are welcome.** You do not need to be a developer to help.
+
+- [Report a bug](https://github.com/AdiRosenstock/career-agent-public/issues/new?template=bug_report.yml): describe what you tried and what went wrong.
+- [Suggest an improvement](https://github.com/AdiRosenstock/career-agent-public/issues/new?template=feature_request.yml): tell us what would make applying easier.
+- Improve confusing instructions, accessibility, filters, or the interface.
+- Build and test support for more graduation dates, countries, and agent tools.
+
+For code or documentation changes, read [Contributing](CONTRIBUTING.md). Fork the project, make your change, and open a pull request so it can be reviewed before it becomes part of the app. For a large change, open an issue first to discuss the approach. Use fictional examples; never share your résumé, application history, passwords or private screenshots.
+
 ## Development
 
 ```sh

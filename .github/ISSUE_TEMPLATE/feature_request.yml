@@ -1,0 +1,25 @@
+name: Suggest an improvement
+description: Share an idea, confusing step, or usability improvement. No coding knowledge needed.
+body:
+  - type: markdown
+    attributes:
+      value: "Ideas from users, designers and developers are welcome. Use fictional examples and keep personal documents, application records and credentials private."
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: Describe the task or confusing step in your own words.
+    validations:
+      required: true
+  - type: textarea
+    id: improvement
+    attributes:
+      label: What would make it better?
+      description: A suggestion is enough; you do not need to explain how to code it.
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Anything else? (optional)
+      description: Add fictional examples or screenshots with all private information removed.
