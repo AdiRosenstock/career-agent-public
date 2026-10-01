@@ -17,6 +17,53 @@ Research opportunities. Prepare with facts. Review every application.
 
 ---
 
+## Let Codex or Claude Code set it up
+
+Already have Codex or Claude Code? **Copy this entire prompt into its chat.** It asks your assistant to install and run the app, then guide you through your own profile. You do not need to understand the commands first. Your assistant may need permission to install software or access a local file.
+
+```text
+Install and set up Career Agent on my computer:
+https://github.com/AdiRosenstock/career-agent-public
+
+Do the setup work, not just explain it. Check my operating system and existing
+Git and Node installations. Use Node 22 (at least 22.16) for installation and
+execution. If a prerequisite is missing, help install it from its official
+source, respecting any required permissions.
+
+Clone the repository into a suitable local folder, or reuse an existing
+checkout without overwriting changes. Read README.md, AGENTS.md, and CLAUDE.md
+when applicable. Run npm ci. Preserve any existing .env.local, database,
+documents, and storage choice.
+
+For a new workspace, ask me for the full path to my original résumé PDF.
+Use local SQLite unless I request another backend. Run setup with
+npm run setup -- --resume "FULL_PATH_TO_MY_PDF" --backend sqlite
+using the actual path I provide, not the placeholder. Do not rewrite my PDF.
+If I do not have it ready, start the fictional demo with npm run demo instead,
+and explain how to finish personal setup later.
+
+Build with npm run build, run npm run doctor, and fix setup errors.
+Start npm start for my personal workspace and check that the dashboard loads
+at http://127.0.0.1:4317 (the demo uses http://127.0.0.1:4318).
+If a port is occupied, identify the existing service instead of killing it.
+Keep the app running and tell me how to stop and reopen it.
+
+Walk me through Your profile and Settings. Explain that automatic preparation
+currently supports US full-time roles for a June 2027 graduation; do not assume
+that is my graduation date. Show me company, sponsorship and pay filters.
+
+Help me choose Codex or Claude Code in the dashboard. Explain what browser
+and email tools I need for assisted work, and guide me through connecting my
+own tools only when I request it. The dashboard's assistant selector does not
+connect accounts. Do not ask me to paste secrets into chat or tracked files.
+
+Do not submit applications, send messages, start automations, publish my
+personal data, or invent profile answers. End with the working local URL,
+what was installed, and any genuinely unfinished setup steps.
+```
+
+Prefer doing it yourself? Follow the [step-by-step quick start](#quick-start) below. To try fictional data first, tell your assistant: **“Set up the demo only; do not ask for my résumé yet.”**
+
 Career Agent is an open-source, local-first application workspace, built around a simple requirement: reduce repetitive application work while keeping the candidate in control. It brings job research, sourced facts, unchanged documents, draft answers, duplicate checks, and review history into one place.
 
 The dashboard is the system of record. Codex or Claude Code handles research and browser work through a repository skill. An application is only considered submitted when there is confirmation evidence.
