@@ -166,8 +166,7 @@ export default function ApplicationHub({
           >
             <div className="desk-list-header">
               <div>
-                <h2>Application tracker</h2>
-                <p>Keep the evidence close and the next step clear.</p>
+                <h2>Saved roles</h2>
               </div>
               <div className="tracker-tools">
                 <button
@@ -257,7 +256,7 @@ export default function ApplicationHub({
               <label>Sort by<select aria-label="Sort applications" value={sort} onChange={e => setSort(e.target.value)}><option value="fit">Best match</option><option value="company">Company name</option><option value="pay">Highest annual range minimum</option></select></label>
               <button className="button secondary" onClick={resetFilters}>Reset filters</button>
             </div>
-            <div className="filter-presets" aria-label="Quick filters"><span>Quick views</span><button onClick={() => { resetFilters(); setFilter('all'); setSponsorship('explicit_yes'); }}>Role sponsors</button><button onClick={() => { resetFilters(); setFilter('all'); setSponsorship('history_only'); }}>Sponsor history</button><button disabled={!((state.settings.minimumAnnualCompensation ?? 0) > 0)} title="Uses the minimum and base/total basis saved in Settings" onClick={() => { resetFilters(); setFilter('all'); setPay('meets'); }}>Meets my pay floor</button><button onClick={() => { resetFilters(); setFilter('research'); }}>Needs research</button><p>Employer history is not a role-level guarantee. Filters use saved evidence; ask your agent to verify missing facts. Pay sorting uses annual USD minimums; base and total remain labelled separately.</p></div>
+            <div className="filter-presets" aria-label="Quick filters"><span>Quick views</span><button onClick={() => { resetFilters(); setFilter('all'); setSponsorship('explicit_yes'); }}>Role sponsors</button><button onClick={() => { resetFilters(); setFilter('all'); setSponsorship('history_only'); }}>Sponsor history</button><button disabled={!((state.settings.minimumAnnualCompensation ?? 0) > 0)} title="Uses the minimum and base/total basis saved in Settings" onClick={() => { resetFilters(); setFilter('all'); setPay('meets'); }}>Meets my pay floor</button><button onClick={() => { resetFilters(); setFilter('research'); }}>Needs research</button><details className="filter-evidence-note"><summary>How these filters work</summary><p>Employer history is not a role-level guarantee. Filters use saved evidence; ask your agent to verify missing facts. Pay sorting uses annual USD minimums; base and total remain labelled separately.</p></details></div>
             <div className="tracker-scroll">
               <table className="tracker-table">
                 <thead>

@@ -1,12 +1,12 @@
 # Interface decisions
 
-Career Agent is a desktop application workspace. The interface pairs a compact, inspectable application table with a photographic city header and an original city illustration. The header offers working shortcuts to opportunities and review; it does not claim application progress without evidence.
+Career Agent is a desktop application workspace. The main dashboard opens directly onto saved roles, built-in filters, and the application table. A compact page header offers working shortcuts to opportunities and adding a job. Creator photography belongs on the About page.
 
 ## Visual direction
 
 Ink blue (#122d51) anchors navigation, white holds application records, pale blue (#e5edfb) frames the introduction, blue (#235ad6) identifies actions, and coral (#ff8976) marks the product identity. Avenir Next falls back to platform sans-serif fonts without requesting external fonts.
 
-The city image and overlapping illustration express the transition from university to work. Company initials provide local visual landmarks instead of requesting employer logos from tracking services. Initials are not official logos. Color adds recognition while company names, evidence and action labels remain readable without it.
+Company initials provide local visual landmarks instead of requesting employer logos from tracking services. Initials are not official logos. Color adds recognition while company names, evidence and action labels remain readable without it.
 
 ## Interaction
 
@@ -25,8 +25,6 @@ Reviewed on October 1, 2026, with star counts obtained through the GitHub API:
 These are references, not dependencies or copied implementations. Star counts are dated observations, not a claim to a comprehensive global ranking.
 
 ## Image sources and privacy
-
-`public/art/next-stop.svg` is original repository artwork, distributed under the repository MIT license. The city photograph loads directly from [Unsplash](https://unsplash.com) at `https://images.unsplash.com/photo-1519501025264-65ba15a82390`; it is governed by the [Unsplash license](https://unsplash.com/license), not this repository's software license. Its request uses no-referrer and contains no candidate information. The local illustration and text still work if the remote photo cannot load. No image is generated from or derived from candidate records.
 
 The About portrait remains hosted by BanterBoost with separate attribution. No third-party photography is bundled as software source.
 

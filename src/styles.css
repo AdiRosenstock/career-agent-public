@@ -4324,23 +4324,10 @@ h1,h2,h3 { font-family:inherit; }
 .page-heading { margin-bottom:20px; }
 .page-heading h1 { font-size:28px; font-weight:700; color:var(--ink); }
 .page-heading p { color:#637189; font-size:13px; }
-.career-banner { display:grid; grid-template-columns:1.05fr 1fr; min-height:260px; margin-bottom:24px; overflow:hidden; border-radius:14px; background:#e5edfb; }
-.career-banner-copy { padding:28px 32px; position:relative; z-index:1; }
-.banner-caption { font-size:13px; color:#4f6486; }
-.career-banner h2 { font-size:clamp(30px,3vw,44px); line-height:1.06; letter-spacing:-1.6px; margin:12px 0; color:#142d51; font-weight:750; }
-.career-banner p { font-size:14px; line-height:1.55; color:#4a5e7c; }
-.banner-actions { display:flex; align-items:center; gap:18px; margin-top:22px; flex-wrap:wrap; }
 .button { border-radius:7px; min-height:36px; font-size:13px; }
 .button.primary { background:#235ad6; border-color:#235ad6; color:white; }
 .button.primary:hover:not(:disabled) { background:#1947ad; }
 .button.secondary { border-color:#d9e2ef; color:#2a4265; }
-.banner-review { display:flex; gap:7px; align-items:center; border:0; background:transparent; padding:5px 0; color:#203f6b; font-weight:600; font-size:13px; }
-.banner-review span { background:#fff; padding:2px 7px; border-radius:5px; }
-.career-banner-art { position:relative; min-height:270px; overflow:hidden; background:#17345e; }
-.city-photo { width:100%; height:100%; position:absolute; object-fit:cover; object-position:center 44%; }
-.city-drawing { position:absolute; width:52%; height:auto; right:24px; bottom:25px; border:7px solid #fff; border-radius:4px; transform:rotate(7deg); box-shadow:0 8px 24px #102a5140; }
-.photo-credit { position:absolute; left:14px; top:12px; font-size:10px; color:white; background:#122d51cc; padding:4px 7px; border-radius:3px; }
-.photo-credit a { text-decoration:none; }
 .onboarding-banner { background:#fff; border:1px solid #dbe5f2; border-left:3px solid #ed8970; border-radius:7px; padding:12px 16px; margin-bottom:22px; }
 .onboarding-banner strong { font-size:13px; color:#304562; }
 .onboarding-banner button { color:#235ad6; }
@@ -4370,9 +4357,9 @@ h1,h2,h3 { font-family:inherit; }
 .hub-actions .hub-open { color:#235ad6; background:#edf3ff; border-color:#dbe7ff; }
 .page-footer { color:#637189; }
 a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible { outline-color:#235ad6; }
-@media(max-width:1100px) and (min-width:901px) { .career-banner-copy { padding:24px; } .city-drawing { width:65%; right:12px; } .banner-actions { gap:12px; } }
-@media(max-width:900px) { .main-wrap { margin-left:0; } .sidebar { width:232px; } .main-wrap main { padding:24px 22px 0; } .topbar { padding:0 22px; } .career-banner-copy { padding:26px; } .career-banner h2 { font-size:34px; } }
-@media(max-width:620px) { .career-banner { grid-template-columns:1fr; } .career-banner-art { min-height:180px; } .city-drawing { width:160px; bottom:15px; } .career-banner h2 { font-size:38px; } .desk-list-header { padding:18px; } .hub-filter-bar { padding:14px 18px; } }
+@media(max-width:1100px) and (min-width:901px) {  }
+@media(max-width:900px) { .main-wrap { margin-left:0; } .sidebar { width:232px; } .main-wrap main { padding:24px 22px 0; } .topbar { padding:0 22px; }  }
+@media(max-width:620px) {  .desk-list-header { padding:18px; } .hub-filter-bar { padding:14px 18px; } }
 .tracker-table .hub-actions .button.text { white-space:normal; overflow-wrap:anywhere; max-width:100%; line-height:1.5; text-align:right; padding-right:0; }
 .hub-actions .button.secondary { color:#235ad6; background:#edf3ff; border-color:#dbe7ff; }
 .hub-footnote { padding:14px 24px; }
@@ -4387,3 +4374,25 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 .filter-presets p { flex-basis:100%; font-size:11px; line-height:1.6; color:#637189; margin-top:3px; }
 @media(max-width:1200px) { .advanced-job-filters { grid-template-columns:repeat(3,minmax(0,1fr)); } }
 @media(max-width:620px) { .advanced-job-filters { grid-template-columns:repeat(2,minmax(0,1fr)); padding:4px 18px 18px; } .filter-presets { padding:0 18px 18px; } .desk-list .tab-row { overflow-x:auto; } }
+
+/* The application desk keeps records, rather than promotional content, first. */
+.application-dashboard { background:#fafbfc; min-height:calc(100vh - 60px); }
+.application-dashboard .page-heading { align-items:center; margin-bottom:24px; }
+.application-dashboard .page-heading h1 { font-size:26px; letter-spacing:-.7px; }
+.application-dashboard .page-heading p { margin-top:6px; }
+.application-dashboard .desk-list { border:1px solid #e2e6ec; border-radius:8px; }
+.application-dashboard .desk-list-header { padding:16px 20px; background:#fff; }
+.application-dashboard .desk-list-header h2 { font-size:14px; font-weight:600; letter-spacing:0; }
+.application-dashboard .desk-list .tab-row { padding:0 20px; }
+.application-dashboard .hub-filter-bar { padding:16px 20px 12px; }
+.application-dashboard .advanced-job-filters { padding:0 20px 14px; gap:10px; }
+.application-dashboard .filter-presets { padding:0 20px 16px; gap:8px; }
+.application-dashboard .filter-presets button { border-radius:5px; background:#fff; border-color:#dce3ee; padding:5px 10px; font-size:11px; }
+.filter-evidence-note { margin-left:auto; font-size:11px; color:#637189; max-width:100%; }
+.filter-evidence-note summary { cursor:pointer; text-decoration:underline; text-underline-offset:3px; }
+.filter-evidence-note p { max-width:620px; margin-top:10px; line-height:1.6; }
+.application-dashboard .tracker-table th { background:#f6f8fa; font-size:11px; padding-top:11px; padding-bottom:11px; }
+.application-dashboard .tracker-table td { padding-top:17px; padding-bottom:17px; }
+.application-dashboard .role-main h3 { color:#263d5d; }
+.application-dashboard .onboarding-banner { background:#fff; margin-bottom:20px; }
+@media(max-width:620px) { .application-dashboard .page-heading { align-items:flex-start; gap:16px; flex-direction:column; } .filter-evidence-note { margin-left:0; flex-basis:100%; margin-top:5px; } }
