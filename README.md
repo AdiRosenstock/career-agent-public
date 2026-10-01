@@ -46,56 +46,110 @@ The app does not run an invisible AI agent, store email credentials, take candid
 
 ## Quick start
 
-### Requirements
+You run Career Agent on **your own computer**. There is no website account to create. Your profile and documents stay in your private workspace. The dashboard works for manual tracking; Codex or Claude Code adds research and form-filling assistance.
 
-- Node.js **22.16+** and npm. Node 22 is the tested/CI baseline; `.nvmrc` selects it. Use the same Node runtime for installation and execution.
-- Git and an unchanged résumé PDF available locally.
-- Codex **or Claude Code** for assisted work. Manual tracking works without either.
-- Internet access for dependency installation and employer feeds.
+**Current limitation:** automatic preparation supports US full-time roles for a **June 2027 graduation**. Other graduation dates need manual review and changes to the matching rules. This is not yet a general-purpose application service for every candidate.
+
+### 1. Install the basics once
+
+- Install **Node.js 22** from [Node.js](https://nodejs.org/en/download). Node runs the app; npm, included with it, installs its dependencies. The project is tested on Node 22.16 or newer within Node 22.
+- Install [Git](https://git-scm.com/downloads), which downloads and updates the project.
+- For assisted work, use your installed **Codex or Claude Code**. You can try the dashboard without either.
+
+Open **Terminal** on macOS or **PowerShell** on Windows. Paste each command below and press Enter. Keep this terminal open while using the app.
+
+### 2. Download Career Agent
 
 ```sh
 git clone https://github.com/AdiRosenstock/career-agent-public.git
 cd career-agent-public
-# If you use nvm: nvm install && nvm use
 npm ci
-npm run setup
-npm run doctor
 ```
 
-Setup asks for your own unchanged résumé PDF and storage choice. SQLite is the default and needs no external account. For Supabase, use your own project and keep its server credential private. Existing configuration is never overwritten. See [connections](docs/CONNECTIONS.md).
+Wait for installation to finish. The `career-agent-public` folder is your copy of the app. Keep it in a place you can find again.
 
-Then:
-
-```sh
-npm run build
-npm start
-```
-
-Open **[127.0.0.1:4317](http://127.0.0.1:4317)**. A new workspace starts with a blank candidate profile. Open **Your profile** to save contact details, verified facts, work authorization, and reusable answers. Set your compensation minimum and base/total basis in **Settings**. Do not copy another candidate's profile or legal declarations.
-
-The server uses `.data/career-agent.sqlite` by default. Files and credentials remain private in `.data/` and `.env.local`; they are excluded from Git. Existing databases remain authoritative when you update the code.
-
-### Try the interface with fictional data
+### 3. Try it first, with fictional data
 
 ```sh
 npm run demo
 ```
 
-Open **[127.0.0.1:4318](http://127.0.0.1:4318)**. The demo uses its own `.data/demo` SQLite database, a fictional candidate, reserved example URLs, and a placeholder PDF. It never loads your normal application database. Demo jobs intentionally lack verified sponsorship and stay in research. **Do not upload the demo PDF or use its fictional facts in an application.** Stop it with Ctrl+C.
+Open [the demo at 127.0.0.1:4318](http://127.0.0.1:4318) in your browser. Try the company, sponsorship, location, pay and career-track filters. **About** in the left menu introduces the creator. The demo uses fictional jobs and a placeholder résumé; do not use them for real applications. It never loads your personal application database.
 
-## Use with Codex or Claude Code
+Press **Ctrl+C** in the terminal to stop the demo when you are ready for your own workspace.
 
-Open the folder in Codex, or run Claude Code here. Both use the same CLI and workflow: Codex discovers `.agents/skills`, while Claude discovers `.claude/skills` and loads `CLAUDE.md`. Choose your assistant in the dashboard. Start with:
+### 4. Set up your own workspace
 
-```text
-Use the job-application-agent skill in this repository. Check my saved profile and
-application history, then help prepare US full-time 2027 graduate roles.
-Follow my current role priorities and compensation settings. Preserve my
-original PDFs. Ask only for missing facts and leave employer forms ready
-for my review. Do not submit or start an automation.
+Have your original résumé PDF ready. In the same project folder, run:
+
+```sh
+npm run setup
+npm run doctor
+npm run build
+npm start
 ```
 
-Read the [complete agent setup guide](docs/AGENT_SETUP.md) for onboarding, account coverage, form filling, and reusable prompts. Browser and email tools depend on your agent installation and permissions; the dashboard does not provide them itself.
+During setup:
+
+1. Enter the full path to your résumé PDF, including the filename. On macOS you can copy a file's path from Finder. Use the original PDF; setup will not rewrite it.
+2. Choose **SQLite** for the easiest start. SQLite is a database stored on your computer and needs no account or server setup.
+3. Keep the suggested port, **4317**, unless another app already uses it.
+
+`doctor` checks your setup and reports missing requirements. On the first run it may report that the app has not been built; the next command, `npm run build`, handles that. Fix any Node, résumé or database errors before continuing. Setup will not overwrite an existing configuration.
+
+Open [your dashboard at 127.0.0.1:4317](http://127.0.0.1:4317). This address works only while the app is running on your computer.
+
+- **Your profile:** enter your own contact details, graduation date, verified experience and exact reusable answers. Confirm work authorization yourself.
+- **Settings:** choose role priorities, a compensation minimum, and whether the minimum means base salary or total compensation.
+- **Applications:** filter saved roles and review the evidence. Employer sponsorship history is not confirmation for a specific role.
+- **Opportunities:** add a job posting or refresh configured public employer feeds. An empty list is normal until jobs are imported or feeds are configured.
+- **About:** find the creator's background, LinkedIn, GitHub and source links. You can reopen it directly with `?view=about`.
+
+Your private files live in `.data/` and `.env.local`. They are excluded from Git. **GitHub stores the code, not your application records.** Keep a private backup if you need to restore your history later.
+
+### 5. Use Codex or Claude Code
+
+Open the `career-agent-public` folder in Codex, or open your installed Claude Code session in that folder. In the dashboard's left panel, choose your assistant and click **Continue with agent**. Copy the instruction into that assistant's chat.
+
+Selecting an assistant does **not** connect an account or start an agent. Both assistants read the repository's project instructions and shared application skill. Browser and email access must be provided by your own agent tools or MCP servers. An MCP server is a tool connection that lets your assistant use a service; none is needed merely to track jobs locally.
+
+For a first request, paste:
+
+```text
+Use the job-application-agent skill in this repository. Check my saved profile
+and application history. Help prepare jobs that match my preferences.
+Preserve my original documents. Ask for missing facts instead of guessing.
+Leave employer forms ready for my review. Do not submit or start automations.
+```
+
+If browser or email tools are unavailable, use manual tracking and have the assistant prepare answers for you to copy. A saved packet is not proof that an employer form has been filled.
+
+See [agent setup](docs/AGENT_SETUP.md) for the exact Codex and Claude instructions. Use [connections](docs/CONNECTIONS.md) if you want your own Supabase database or browser/email MCP tools. Supabase is optional; beginners should start with SQLite.
+
+### Open the app again later
+
+Open a terminal inside your `career-agent-public` folder and run:
+
+```sh
+npm start
+```
+
+Open [127.0.0.1:4317](http://127.0.0.1:4317). Your saved local records remain between runs. Stop the app with **Ctrl+C**; this does not erase your data. You do not need to run setup again.
+
+### If something goes wrong
+
+| What you see | What to do |
+|---|---|
+| `npm` or `node` is not recognized | Install Node 22, then close and reopen your terminal |
+| `package.json` cannot be found | Enter the downloaded folder with `cd career-agent-public` |
+| Browser says the page is unavailable | Run `npm start` and keep the terminal open; use port 4317 for your workspace or 4318 for the demo |
+| Native SQLite / Node version error | Use Node 22 for both installation and execution, then run `npm ci` again |
+| Résumé path or checksum error | Run `npm run doctor`; restore the original PDF rather than editing the recorded checksum |
+| Setup says configuration already exists | Keep it; do not delete your configuration to repeat onboarding |
+| No jobs or no sponsorship matches | Import a posting or configure feeds; unknown evidence does not count as confirmed sponsorship |
+| Your assistant cannot open forms | Configure its browser tools or fill manually; see the connections guide |
+
+For more help, read [troubleshooting](docs/TROUBLESHOOTING.md). When reporting an issue, remove personal answers, documents and credentials from logs or screenshots.
 
 ## Your daily workflow
 
@@ -172,5 +226,7 @@ A GitHub clone restores **code**, not your candidate state. Back up the active s
 Career Agent was created by **Adi Rosenstock**, a Costa Rican student studying Data Science and Economics at Northwestern University and the creator of [BanterBoost](https://fplbanterboost.com). It grew out of a personal application workflow and is open source so others can use their own documents, profile, storage, and agent tools.
 
 The architecture keeps candidate data private, checks original document integrity, shares one workflow across Codex and Claude Code, and requires current approval before submission. Read the [architecture decisions](docs/ARCHITECTURE.md) for implementation details.
+
+[LinkedIn](https://www.linkedin.com/in/adirosenstock) · [GitHub](https://github.com/AdiRosenstock)
 
 Biography and portrait: [BanterBoost About page](https://fplbanterboost.com/about). The portrait is hosted there and is not covered by this repository's software license. Creator attribution does not supply application answers or identify the current workspace user.
