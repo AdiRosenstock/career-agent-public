@@ -23,7 +23,7 @@ The dashboard is the system of record. Codex or Claude Code handles research and
 
 **Open source under the MIT license.** Built with TypeScript, React, Express, SQLite, and a shared agent workflow. This repository contains reusable code and synthetic examples; personal applications and documents belong in each user's private workspace.
 
-![Career Agent application workspace with fictional demonstration data](docs/assets/workspace.png)
+![Career Agent desktop workspace with city photography, original illustration, and fictional demonstration data](docs/assets/workspace.png)
 
 > **Current scope:** US full-time 2027 graduate and early-career roles across product, data, software, finance, and consulting. It is a single-user local application, not a hosted multi-user service. Other countries, cohorts, and independent background workers need further development.
 

@@ -1,34 +1,35 @@
 # Interface decisions
 
-The interface is a working application desk, not a marketing landing page. Its main task is comparing roles and opening the next form with enough context to avoid a mistake.
+Career Agent is a desktop application workspace. The interface pairs a compact, inspectable application table with a photographic city header and an original city illustration. The header offers working shortcuts to opportunities and review; it does not claim application progress without evidence.
 
-## Visual hierarchy
+## Visual direction
 
-- Light gray navigation, white work surfaces and a restrained violet selection accent.
-- System fonts, modest corner radii and flat borders; no external font requests.
-- A semantic desktop table separates company/role, location, compensation, sponsorship and actions into stable columns. Annual pay basis and evidence dates remain visible.
-- Status color communicates research or confirmed application state, rather than decorating every label.
-- Profile setup appears as an actionable notice. There is no oversized motivational hero.
-- Documents/answers live in their own view, so the application list stays focused.
+Ink blue (#122d51) anchors navigation, white holds application records, pale blue (#e5edfb) frames the introduction, blue (#235ad6) identifies actions, and coral (#ff8976) marks the product identity. Avenir Next falls back to platform sans-serif fonts without requesting external fonts.
 
-## Interaction decisions
+The city image and overlapping illustration express the transition from university to work. Company initials provide local visual landmarks instead of requesting employer logos from tracking services. Initials are not official logos. Color adds recognition while company names, evidence and action labels remain readable without it.
 
-Role family and status filters are independent. Search includes company, title and location. Filter controls use native buttons with pressed state, rather than claiming tab semantics without a full tabpanel keyboard model. Empty results provide a clear explanation and search reset.
+## Interaction
 
-Opening a form does not mark it submitted. Recording a prior application requires a second explicit click on the exact role, because it changes duplicate blocking. Packet readiness is labelled separately from form completion.
+Search, role family and status remain independent, with filters stored in the URL. Search includes company, role and location. Native buttons expose pressed state; tables retain semantic headings and cells. Documents and reusable answers have a separate working view. Recording a prior application requires explicit confirmation. Opening a form never implies submission.
 
-Native disclosure controls reveal progress and unresolved evidence. Keyboard focus remains visible, a skip link bypasses navigation, narrow layouts preserve the comparison table with horizontal scrolling, and reduced-motion preferences disable decorative transitions.
+Keyboard focus, the skip link, reduced motion and narrow-screen table scrolling remain available. The desktop layout keeps pay basis, sponsorship uncertainty and evidence dates visible. Original document integrity and approval rules are unchanged.
 
-## References
+## Research references
 
-[GitHub Primer](https://primer.style/product/) provides a useful reference for product navigation, component hierarchy and disclosure patterns. [GOV.UK table guidance](https://design-system.service.gov.uk/components/table/) emphasizes comparison and scanning; its [tabs guidance](https://design-system.service.gov.uk/components/tabs/) discusses repeated-use interfaces. These informed the design judgment here; no third-party component implementation was copied or installed.
+Reviewed on October 1, 2026, with star counts obtained through the GitHub API:
+
+- [shadcn/ui](https://github.com/shadcn-ui/ui), 124,922 stars: compact controls and clear component hierarchy; [blocks](https://ui.shadcn.com/blocks).
+- [Twenty](https://github.com/twentyhq/twenty), 57,768 stars: persistent navigation and record-oriented workspace organization.
+- [Actual Budget](https://github.com/actualbudget/actual), 29,239 stars: local-first ownership and a focused data workspace.
+
+These are references, not dependencies or copied implementations. Star counts are dated observations, not a claim to a comprehensive global ranking.
+
+## Image sources and privacy
+
+`public/art/next-stop.svg` is original repository artwork, distributed under the repository MIT license. The city photograph loads directly from [Unsplash](https://unsplash.com) at `https://images.unsplash.com/photo-1519501025264-65ba15a82390`; it is governed by the [Unsplash license](https://unsplash.com/license), not this repository's software license. Its request uses no-referrer and contains no candidate information. The local illustration and text still work if the remote photo cannot load. No image is generated from or derived from candidate records.
+
+The About portrait remains hosted by BanterBoost with separate attribution. No third-party photography is bundled as software source.
 
 ## Verification
 
-The documented preview uses an isolated fictional candidate and reserved example URLs. Check desktop and narrow layouts, role filtering, search, document navigation, and the non-mutating cancel path for recording an application. Real browser-form compatibility remains a separate concern from dashboard layout.
-
-## External design skills
-
-The desktop revision used [Anthropic frontend-design](https://github.com/anthropics/skills/tree/main/skills/frontend-design) for subject-specific hierarchy and restraint, and [Vercel web-design-guidelines](https://github.com/vercel-labs/agent-skills/tree/main/skills/web-design-guidelines) for semantic controls, focus, content handling and large-list rendering. Both are development guidance, not application dependencies. Their code is not vendored here.
-
-The primary design target is desktop: a single table replaces repeated cards and oversized counters. Search and role/status filters persist in the URL across refreshes. Empty states and unknown evidence remain explicit. The table keeps native semantics and keyboard controls.
+The preview uses fictional records and reserved example URLs. Verify search, role filters, empty results, document navigation, header shortcuts and review controls separately from external employer form compatibility.

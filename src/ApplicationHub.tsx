@@ -156,7 +156,7 @@ export default function ApplicationHub({
             <div className="desk-list-header">
               <div>
                 <h2>Application tracker</h2>
-                <p>2027 graduate roles</p>
+                <p>Keep the evidence close and the next step clear.</p>
               </div>
               <div className="tracker-tools">
                 <button
@@ -261,7 +261,7 @@ export default function ApplicationHub({
                     return (
                       <tr className="hub-role" key={job.id}>
                         <td className="role-main">
-                          <span className="role-company">{job.company}</span>
+                          <div className="company-heading"><span className={`company-monogram family-${job.roleFamily}`} aria-hidden="true">{job.company.split(/\s+/).map(word => word[0]).slice(0,2).join('')}</span><span className="role-company">{job.company}</span></div>
                           <h3>{job.title}</h3>
 
                           <details className="hub-handoff">
