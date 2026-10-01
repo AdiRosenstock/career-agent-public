@@ -11,11 +11,15 @@ Research opportunities. Prepare with facts. Review every application.
 ![Local first](https://img.shields.io/badge/storage-local_first-244D3D)
 [![MIT](https://img.shields.io/badge/license-MIT-244D3D)](LICENSE)
 
-[Start here](#start-here-no-coding-experience-needed) · [Use with Codex or Claude](docs/AGENT_SETUP.md) · [Architecture](docs/ARCHITECTURE.md) · [Design decisions](docs/DESIGN_DECISIONS.md) · [Interface](docs/UI_DESIGN.md)
+[Start here](#start-here-no-coding-experience-needed) · [Use with Codex or Claude](docs/AGENT_SETUP.md) · [Architecture](docs/ARCHITECTURE.md) · [Design decisions](docs/DESIGN_DECISIONS.md) · [Interface](docs/UI_DESIGN.md) · [Contribute](CONTRIBUTING.md)
 
 </div>
 
 ---
+
+> **This is an open-source project, and you are invited to improve it.** Suggestions, bug reports, design changes, documentation edits and code contributions are welcome. You do not need technical experience to share an idea. [Suggest an improvement](https://github.com/AdiRosenstock/career-agent-public/issues/new?template=feature_request.yml) · [Report a bug](https://github.com/AdiRosenstock/career-agent-public/issues/new?template=bug_report.yml) · [Propose an edit](CONTRIBUTING.md).
+>
+> Changes are reviewed through pull requests before being merged. Please use fictional examples and keep personal application information private.
 
 ## Start here: no coding experience needed
 
