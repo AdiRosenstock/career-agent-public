@@ -7,6 +7,7 @@ import {
   FileText,
   ArrowLeft,
 } from "lucide-react";
+import { annualPay, matchesJobFilters, sponsorshipCategory } from "../shared/jobFilters";
 import type { AppSnapshot, Job } from "../shared/types";
 import {
   applicationGroup,
@@ -40,6 +41,7 @@ function payLabel(job: Job, state: AppSnapshot) {
   return `${amount(pay.min)}${pay.max != null && pay.max !== pay.min ? `–${amount(pay.max)}` : ""} · ${pay.basis === "base" ? "base" : pay.basis === "total" ? "total" : "basis unverified"}`;
 }
 const groups = [
+  ["all", "All statuses"],
   ["active", "Application links"],
   ["research", "Research"],
   ["applied", "Applied"],
@@ -70,18 +72,26 @@ export default function ApplicationHub({
   const [search, setSearch] = useState(
     () => new URLSearchParams(location.search).get("q") || "",
   );
+  const [company, setCompany] = useState(() => new URLSearchParams(location.search).get('company') || 'all');
+  const [place, setPlace] = useState(() => new URLSearchParams(location.search).get('location') || 'all');
+  const [sponsorship, setSponsorship] = useState(() => new URLSearchParams(location.search).get('sponsor') || 'all');
+  const [pay, setPay] = useState(() => new URLSearchParams(location.search).get('pay') || 'all');
+  const [sort, setSort] = useState(() => new URLSearchParams(location.search).get('sort') || 'fit');
+  function resetFilters() { setCompany('all'); setPlace('all'); setSponsorship('all'); setPay('all'); setFamily('all'); setSearch(''); setSort('fit'); }
+  const companies = [...new Set(state.jobs.map(j => j.company))].sort((a,b) => a.localeCompare(b));
+  const locations = [...new Set(state.jobs.map(j => j.location).filter(Boolean))].sort((a,b) => a.localeCompare(b));
   useEffect(() => {
     const u = new URL(location.href);
     for (const [key, value] of [
       ["track", family],
       ["status", filter],
-      ["q", search],
+      ["q", search], ["company", company], ["location", place], ["sponsor", sponsorship], ["pay", pay], ["sort", sort],
     ]) {
       if (value) u.searchParams.set(key, value);
       else u.searchParams.delete(key);
     }
     history.replaceState(null, "", u);
-  }, [family, filter, search]);
+  }, [family, filter, search, company, place, sponsorship, pay, sort]);
   const [answers, setAnswers] = useState("");
   const [message, setMessage] = useState("");
   const [confirmApplied, setConfirmApplied] = useState<string | null>(null);
@@ -91,10 +101,11 @@ export default function ApplicationHub({
         family === "all" ||
         (family === "finance" ? financeRole(j) : j.roleFamily === family),
     )
-    .sort((a, b) => b.score - a.score);
+    .sort((a, b) => sort === "company" ? a.company.localeCompare(b.company) : sort === "pay" ? annualPay(b, state) - annualPay(a, state) : b.score - a.score);
   const visible = jobs.filter(
     (j) =>
-      applicationGroup(j, state) === filter &&
+      (filter === "all" || applicationGroup(j, state) === filter) &&
+      matchesJobFilters(j, state, { company, location: place, sponsorship, pay }) &&
       `${j.company} ${j.title} ${j.location}`
         .toLowerCase()
         .includes(search.toLowerCase()),
@@ -201,7 +212,7 @@ export default function ApplicationHub({
                   {label}
                   <span>
                     {
-                      jobs.filter((j) => applicationGroup(j, state) === id)
+                      jobs.filter((j) => (id === "all" || applicationGroup(j, state) === id) && matchesJobFilters(j, state, {company, location:place, sponsorship,pay}) && `${j.company} ${j.title} ${j.location}`.toLowerCase().includes(search.toLowerCase()))
                         .length
                     }
                   </span>
@@ -238,6 +249,15 @@ export default function ApplicationHub({
                 {visible.length} shown
               </span>
             </div>
+            <div className="advanced-job-filters" aria-label="Application filters">
+              <label>Company<select aria-label="Company filter" value={company} onChange={e => setCompany(e.target.value)}><option value="all">All companies</option>{companies.map(c => <option key={c}>{c}</option>)}</select></label>
+              <label>Sponsorship<select aria-label="Sponsorship filter" value={sponsorship} onChange={e => setSponsorship(e.target.value)}><option value="all">All evidence</option><option value="explicit_yes">Role sponsorship confirmed</option><option value="history_only">Employer history only</option><option value="unknown">Needs research</option><option value="explicit_no">Explicitly unavailable</option></select></label>
+              <label>Compensation<select aria-label="Compensation filter" value={pay} onChange={e => setPay(e.target.value)}><option value="all">All pay evidence</option><option value="verified">Annual USD range available</option><option value="meets">Meets my saved minimum</option><option value="overlap">Range crosses minimum</option><option value="below">Below minimum</option><option value="unknown">Needs research</option></select></label>
+              <label>Location<select aria-label="Location filter" value={place} onChange={e => setPlace(e.target.value)}><option value="all">All locations</option>{locations.map(c => <option key={c}>{c}</option>)}</select></label>
+              <label>Sort by<select aria-label="Sort applications" value={sort} onChange={e => setSort(e.target.value)}><option value="fit">Best match</option><option value="company">Company name</option><option value="pay">Highest annual range minimum</option></select></label>
+              <button className="button secondary" onClick={resetFilters}>Reset filters</button>
+            </div>
+            <div className="filter-presets" aria-label="Quick filters"><span>Quick views</span><button onClick={() => { resetFilters(); setFilter('all'); setSponsorship('explicit_yes'); }}>Role sponsors</button><button onClick={() => { resetFilters(); setFilter('all'); setSponsorship('history_only'); }}>Sponsor history</button><button disabled={!((state.settings.minimumAnnualCompensation ?? 0) > 0)} title="Uses the minimum and base/total basis saved in Settings" onClick={() => { resetFilters(); setFilter('all'); setPay('meets'); }}>Meets my pay floor</button><button onClick={() => { resetFilters(); setFilter('research'); }}>Needs research</button><p>Employer history is not a role-level guarantee. Filters use saved evidence; ask your agent to verify missing facts. Pay sorting uses annual USD minimums; base and total remain labelled separately.</p></div>
             <div className="tracker-scroll">
               <table className="tracker-table">
                 <thead>
@@ -294,21 +314,7 @@ export default function ApplicationHub({
                         </td>
                         <td className="role-policy">
                           <p>
-                            {job.sponsorship.some(
-                              (e) => e.status === "explicit_no",
-                            )
-                              ? "No sponsorship"
-                              : job.sponsorship.some(
-                                    (e) =>
-                                      e.status === "explicit_yes" &&
-                                      e.scope === "role",
-                                  )
-                                ? "Role sponsorship evidence saved"
-                                : job.sponsorship.some(
-                                      (e) => e.status === "history_only",
-                                    )
-                                  ? "Sponsor history; role unconfirmed"
-                                  : "Sponsorship unverified"}
+                            {{ explicit_yes: 'Role sponsorship confirmed', history_only: 'Employer history; role unconfirmed', unknown: 'Sponsorship unverified', explicit_no: 'No sponsorship' }[sponsorshipCategory(job)]}
                           </p>
                           <span className="small-note">
                             Checked{" "}
@@ -386,8 +392,7 @@ export default function ApplicationHub({
                   <Search size={23} />
                   <h3>No applications in this view</h3>
                   <p>
-                    Try another status or career track, clear your search, or
-                    add a role from Opportunities.
+                    Reset the company, sponsorship, pay and location filters, choose another status, or add a role from Opportunities.
                   </p>
                   {search && (
                     <button

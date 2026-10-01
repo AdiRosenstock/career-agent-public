@@ -31,6 +31,7 @@ The dashboard is the system of record. Codex or Claude Code handles research and
 
 | Capability | How it works |
 |---|---|
+| Filter saved roles | Company, location, sponsorship evidence, compensation, career track, and status; built-in quick views and sorting |
 | Discover opportunities | Read public Greenhouse, Lever, and Ashby job feeds; import sourced manual postings |
 | Keep a factual profile | Save confirmed experience and exact reusable answers with provenance |
 | Compare compensation | Check annual USD base or total pay against your selected floor; keep ambiguous ranges in research |

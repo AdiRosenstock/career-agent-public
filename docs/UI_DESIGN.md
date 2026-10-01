@@ -33,3 +33,11 @@ The About portrait remains hosted by BanterBoost with separate attribution. No t
 ## Verification
 
 The preview uses fictional records and reserved example URLs. Verify search, role filters, empty results, document navigation, header shortcuts and review controls separately from external employer form compatibility.
+
+## Built-in job filters
+
+Company and location options come from the saved job list. Sponsorship filters distinguish recent, sourced role evidence from employer history, unavailable sponsorship, and unknown facts. Mismatched, future-dated, stale, or unsourced evidence never counts as confirmed sponsorship. Employer history does not imply eligibility.
+
+Compensation filters use the saved assessment and the user's selected minimum and base/total basis. Annual USD range sorting uses each range's minimum, places unknown/hourly/non-USD values last, and preserves basis labels; it does not equate base and total compensation. The pay-floor shortcut is disabled until a positive minimum is saved.
+
+Quick views select role sponsors, employer history, pay-floor matches, or research. All-status view allows browsing excluded or previously applied jobs without making them eligible. Search, company, location, sponsorship, pay, sort, track and status persist in the URL. Reset clears narrowing filters while retaining the status view. These controls filter saved records locally and never connect accounts, start agent work or authorize submissions.

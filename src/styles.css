@@ -4376,3 +4376,14 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 .tracker-table .hub-actions .button.text { white-space:normal; overflow-wrap:anywhere; max-width:100%; line-height:1.5; text-align:right; padding-right:0; }
 .hub-actions .button.secondary { color:#235ad6; background:#edf3ff; border-color:#dbe7ff; }
 .hub-footnote { padding:14px 24px; }
+
+.advanced-job-filters { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)) auto; gap:12px; padding:4px 24px 18px; align-items:end; }
+.advanced-job-filters label { display:flex; flex-direction:column; gap:7px; font-size:12px; font-weight:600; color:#465b78; min-width:0; }
+.advanced-job-filters select { font-size:12px; padding:9px 26px 9px 10px; font-weight:400; border-color:#d9e2ef; }
+.filter-presets { display:flex; gap:9px; flex-wrap:wrap; align-items:center; padding:0 24px 18px; }
+.filter-presets span { color:#637189; font-size:12px; margin-right:4px; }
+.filter-presets button { border:1px solid #dbe5f6; background:#f3f7ff; border-radius:16px; padding:6px 12px; color:#315a9b; font-size:12px; }
+.filter-presets button:hover:not(:disabled) { background:#e4edff; }
+.filter-presets p { flex-basis:100%; font-size:11px; line-height:1.6; color:#637189; margin-top:3px; }
+@media(max-width:1200px) { .advanced-job-filters { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+@media(max-width:620px) { .advanced-job-filters { grid-template-columns:repeat(2,minmax(0,1fr)); padding:4px 18px 18px; } .filter-presets { padding:0 18px 18px; } .desk-list .tab-row { overflow-x:auto; } }
