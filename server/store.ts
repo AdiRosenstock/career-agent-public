@@ -10,7 +10,7 @@ import { parseAtsJobUrl } from './discovery.js';
 const text = z.string().max(1_000_000);
 const id = z.string().min(1).max(300);
 const nullable = text.nullable();
-const role = z.enum(['product', 'data', 'finance', 'consulting', 'software', 'other']);
+const role = z.enum(['product', 'data', 'finance', 'consulting', 'software', 'engineering', 'other']);
 const source = z.enum(['greenhouse', 'lever', 'ashby']);
 const evidence = z.object({ id, status: z.enum(['explicit_yes', 'history_only', 'unknown', 'explicit_no']), sourceUrl: text, excerpt: text, checkedAt: text, employerName: text, scope: z.enum(['role', 'employer']), entityMatch: z.boolean() }).strict();
 const question = z.object({ id, label: text, required: z.boolean(), type: text, options: z.array(text).optional() }).strict();
@@ -18,7 +18,7 @@ const schema = z.object({
  schemaVersion: z.literal(1),
  profile: z.object({ name: text, email: text, phone: text, linkedin: text, github: text, graduation: text,
   facts: z.array(z.object({ id, label: text, value: text, source: text, confirmed: z.boolean() }).strict()),
-  visaStatus: text, anticipatedOPT: z.boolean(), authorizationNow: z.boolean().nullable(), authorizationAtStart: z.boolean().nullable(), futureSponsorship: z.boolean().nullable(), authorizationConfirmedAt: nullable, earliestStart: nullable, salaryPreference: nullable,
+  visaStatus: text, anticipatedOPT: z.boolean(), authorizationNow: z.boolean().nullable(), authorizationAtStart: z.boolean().nullable(), futureSponsorship: z.boolean().nullable(), usCitizen: z.boolean().nullable().optional(), exportControlEligible: z.boolean().nullable().optional(), clearanceEligible: z.boolean().nullable().optional(), authorizationConfirmedAt: nullable, earliestStart: nullable, salaryPreference: nullable,
   savedAnswers: z.array(z.object({ id, question: text, answer: text, confirmedAt: text }).strict()),
   resume: z.object({ path: text, sha256: z.string().regex(/^[a-f0-9]{64}$/), originalPath: text, filename: text }).strict(),
   documents: z.array(z.object({ id, kind: z.enum(['transcript', 'recommendation']), label: text, filename: text, path: text, originalPath: text, sha256: z.string().regex(/^[a-f0-9]{64}$/), addedAt: text, documentDate: nullable, notes: text }).strict()).optional().default([]),
@@ -29,7 +29,7 @@ const schema = z.object({
  attempts: z.array(z.object({ id, packetId: id, jobId: id, batchId: id, startedAt: text, finishedAt: nullable, outcome: z.enum(['in_progress', 'submitted', 'failed', 'unknown', 'handoff']), evidence: text, confirmationUrl: nullable }).strict()),
  runs: z.array(z.object({ id, day: text, startedAt: text, finishedAt: nullable, status: z.enum(['running', 'complete', 'partial', 'failed']), discovered: z.number().int().nonnegative(), prepared: z.number().int().nonnegative(), errors: z.array(text) }).strict()),
  boards: z.array(z.object({ id, company: text, source, token: text, enabled: z.boolean(), sponsorship: z.array(evidence) }).strict()),
- settings: z.object({ dailyLimit: z.number().int().min(1).max(20), timezone: z.literal('America/Chicago'), scheduleTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/), rolePriority: z.array(role), backend: z.enum(['sqlite', 'supabase']), automationId: nullable, minimumAnnualCompensation: z.number().finite().nonnegative().max(10_000_000).nullable().optional().default(null), compensationBasis: z.enum(['base', 'total']).optional().default('base') }).strict(),
+ settings: z.object({ dailyLimit: z.number().int().min(1).max(20), timezone: z.literal('America/Chicago'), scheduleTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/), rolePriority: z.array(role), roleKeywords: z.array(z.string().trim().min(1).max(100)).max(30).optional(), backend: z.enum(['sqlite', 'supabase']), automationId: nullable, minimumAnnualCompensation: z.number().finite().nonnegative().max(10_000_000).nullable().optional().default(null), compensationBasis: z.enum(['base', 'total']).optional().default('base') }).strict(),
  preparationLedger: z.array(z.object({ packetId: id, jobId: id, day: text, manualAllowanceId: id.optional() }).strict()),
  manualPreparationAllowances: z.array(z.object({ id, day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), limit: z.number().int().min(21).max(50), reason: z.string().trim().min(10).max(5000), authorizedAt: z.string().datetime() }).strict()).optional().default([]),
  priorApplications: z.array(z.object({ id, company: z.string().min(1).max(1000), title: z.string().min(1).max(1000), jobUrl: nullable, postingId: nullable, source: z.enum(['email', 'linkedin', 'handshake', 'user']), sourceRef: z.string().min(1).max(10000), evidence: z.string().min(1).max(1_000_000), appliedAt: nullable, checkedAt: text, matchScope: z.enum(['exact_role', 'needs_review']).optional(), supersedesId: id.optional() }).strict()).optional().default([]),

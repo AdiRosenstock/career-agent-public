@@ -1,4 +1,4 @@
-export type RoleFamily = 'product' | 'data' | 'finance' | 'consulting' | 'software' | 'other';
+export type RoleFamily = 'product' | 'data' | 'finance' | 'consulting' | 'software' | 'engineering' | 'other';
 export type SponsorshipStatus = 'explicit_yes' | 'history_only' | 'unknown' | 'explicit_no';
 export type JobStatus = 'open' | 'closed' | 'unknown';
 export interface Fact { id: string; label: string; value: string; source: string; confirmed: boolean }
@@ -10,6 +10,7 @@ export interface CandidateProfile {
  name: string; email: string; phone: string; linkedin: string; github: string; graduation: string;
  facts: Fact[]; visaStatus: string; anticipatedOPT: boolean;
  authorizationNow: boolean | null; authorizationAtStart: boolean | null; futureSponsorship: boolean | null;
+ usCitizen?: boolean | null; exportControlEligible?: boolean | null; clearanceEligible?: boolean | null;
  authorizationConfirmedAt: string | null; earliestStart: string | null; salaryPreference: string | null;
  savedAnswers: { id: string; question: string; answer: string; confirmedAt: string }[];
  resume: { path: string; sha256: string; originalPath: string; filename: string };
@@ -46,7 +47,7 @@ export interface SubmissionAttempt {
 export interface DailyRun { id: string; day: string; startedAt: string; finishedAt: string | null; status: 'running' | 'complete' | 'partial' | 'failed'; discovered: number; prepared: number; errors: string[] }
 export interface ManualPreparationAllowance { id: string; day: string; limit: number; reason: string; authorizedAt: string }
 export interface Board { id: string; company: string; source: 'greenhouse' | 'lever' | 'ashby'; token: string; enabled: boolean; sponsorship: SponsorshipEvidence[] }
-export interface Settings { dailyLimit: number; timezone: string; scheduleTime: string; rolePriority: RoleFamily[]; backend: 'sqlite' | 'supabase'; automationId: string | null; minimumAnnualCompensation?: number | null; compensationBasis?: 'base' | 'total' }
+export interface Settings { dailyLimit: number; timezone: string; scheduleTime: string; rolePriority: RoleFamily[]; roleKeywords?: string[]; backend: 'sqlite' | 'supabase'; automationId: string | null; minimumAnnualCompensation?: number | null; compensationBasis?: 'base' | 'total' }
 export interface PriorApplication {
  id: string; company: string; title: string; jobUrl: string | null; postingId: string | null;
  source: 'email' | 'linkedin' | 'handshake' | 'user'; sourceRef: string; evidence: string;

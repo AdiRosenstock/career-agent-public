@@ -1,3 +1,4 @@
+import { priorityRank, sponsorshipNotRequired } from '../shared/candidatePolicy';
 import { useEffect, useState } from "react";
 import {
   Copy,
@@ -101,7 +102,7 @@ export default function ApplicationHub({
         family === "all" ||
         (family === "finance" ? financeRole(j) : j.roleFamily === family),
     )
-    .sort((a, b) => sort === "company" ? a.company.localeCompare(b.company) : sort === "pay" ? annualPay(b, state) - annualPay(a, state) : b.score - a.score);
+    .sort((a, b) => sort === "company" ? a.company.localeCompare(b.company) : sort === "pay" ? annualPay(b, state) - annualPay(a, state) : priorityRank(a, state.settings) - priorityRank(b, state.settings) || b.score - a.score);
   const visible = jobs.filter(
     (j) =>
       (filter === "all" || applicationGroup(j, state) === filter) &&
@@ -239,7 +240,7 @@ export default function ApplicationHub({
                 <option value="all">All career tracks</option>
                 <option value="product">Product</option>
                 <option value="data">Data</option>
-                <option value="software">Software</option>
+                <option value="software">Software</option><option value="engineering">Engineering</option>
                 <option value="finance">Finance & consulting</option>
                 <option value="consulting">Consulting</option>
                 <option value="other">Other</option>
@@ -313,7 +314,7 @@ export default function ApplicationHub({
                         </td>
                         <td className="role-policy">
                           <p>
-                            {{ explicit_yes: 'Role sponsorship confirmed', history_only: 'Employer history; role unconfirmed', unknown: 'Sponsorship unverified', explicit_no: 'No sponsorship' }[sponsorshipCategory(job)]}
+                            {sponsorshipNotRequired(state.profile) ? 'Sponsorship not needed' : { explicit_yes: 'Role sponsorship confirmed', history_only: 'Employer history; role unconfirmed', unknown: 'Sponsorship unverified', explicit_no: 'No sponsorship' }[sponsorshipCategory(job)]}
                           </p>
                           <span className="small-note">
                             Checked{" "}

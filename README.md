@@ -354,3 +354,26 @@ The architecture keeps candidate data private, checks original document integrit
 [LinkedIn](https://www.linkedin.com/in/adirosenstock) · [GitHub](https://github.com/AdiRosenstock)
 
 Biography and portrait: [BanterBoost About page](https://fplbanterboost.com/about). The portrait is hosted there and is not covered by this repository's software license. Creator attribution does not supply application answers or identify the current workspace user.
+
+### Personal career targets and authorization
+
+In **Settings → Career targets**, select tracks and move them into your preferred
+order. Engineering covers mechanical, aerospace, propulsion, manufacturing,
+electrical and hardware careers. Use additional comma-separated role title terms
+for other interests (for example, teacher or nurse). These settings control feed
+selection, preparation priority and opportunity ordering. Existing saved jobs are
+re-evaluated when targeting or profile answers change; affected approvals require
+fresh review.
+
+In **Your profile → Work authorization**, confirm authorization now and at the
+proposed start date and whether you need sponsorship now or in the future. If you
+confirm authorization at start and no sponsorship requirement, postings without
+sponsorship evidence or offering no sponsorship can qualify. Unknown answers keep
+the sponsorship checks in place. Citizenship, ITAR/export-control and clearance
+requirements need separate confirmed eligibility; work authorization alone does
+not establish them.
+
+Choose your own employer boards in Settings. Feeds support Greenhouse, Lever and
+Ashby. Workday and other unsupported postings can be added with **Add a job** by
+pasting the employer URL, title, location and description. The app still targets
+US full-time graduate/entry-level roles in the 2027 cohort.

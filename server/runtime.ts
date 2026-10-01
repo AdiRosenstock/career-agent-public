@@ -1,3 +1,4 @@
+import { matchesTargets, priorityRank } from '../shared/candidatePolicy.js';
 import { readFile, mkdir, writeFile, chmod, copyFile, access } from 'node:fs/promises';
 import path from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
@@ -40,12 +41,12 @@ export async function openRuntime() {
 }
 export type Runtime=Awaited<ReturnType<typeof openRuntime>>;
 function workflowPrompt(mode:string,batchId?:string) {
- if(mode==='accounts') return `Use $job-application-agent in ${workspace}. Check the authorized email connector and signed-in LinkedIn and Handshake sessions for previous applications and suitable 2027 US full-time new-grad jobs. Read application confirmations, not marketing or suggested jobs. Import verified prior applications with source references and exclude exact matching jobs. Never infer that an entire employer is already applied to. Use the saved salary minimum and compensation basis, keep unverified pay in research, and exclude internships. If sign-in or connector access is missing, report the missing connection. Do not submit applications, send messages, or change account settings.`;
+ if(mode==='accounts') return `Use $job-application-agent in ${workspace}. Check the authorized email connector and signed-in LinkedIn and Handshake sessions for previous applications and suitable US full-time new-grad jobs using the saved rolePriority and roleKeywords. Read application confirmations, not marketing or suggested jobs. Import verified prior applications with source references and exclude exact matching jobs. Never infer that an entire employer is already applied to. Use the saved salary minimum and compensation basis, keep unverified pay in research, and exclude internships. If sign-in or connector access is missing, report the missing connection. Do not submit applications, send messages, or change account settings.`;
  if(mode==='submit') {
   if(!batchId) throw new Error('Choose an approved batch first.');
   return `Use $job-application-agent in ${workspace}. Submit only the approved application batch ${batchId}. Read the submission workflow and exact approved packets, refresh each job and inspect its hosted form, preserve the original résumé, and record an attempt before clicking Submit. Stop for changed content or missing answers. Record confirmation evidence; never retry an uncertain submission.`;
  }
- return `Use $job-application-agent in ${workspace}. First finish existing Needs answers packets: apply newly confirmed profile facts and exact saved answers, inspect or recheck hosted forms, complete every factual answer that the saved sources support, and remove review notes only when actually resolved. Surface a short grouped list of genuinely personal choices or employer declarations that the candidate still needs to answer; do not guess or mark them confirmed. Then run today's discovery and preparation workflow, with at most 20 new applications across all runs today. Prioritize 2027 US full-time new-grad, graduate, and entry-level PM/APM and data roles, and cover Forward Deployed Engineer, wealth and asset management, sales and trading, consulting, and SWE. Exclude internships and follow the saved annual compensation minimum and basis; keep unknown pay in research. Check authorized email and account history for exact prior applications before preparing. Check sponsorship evidence, preserve the original résumé and supporting PDFs, and save only complete packets to Ready to review. Do not submit applications. Notify only if a new reviewable batch or user action is ready.`;
+ return `Use $job-application-agent in ${workspace}. First finish existing Needs answers packets: apply newly confirmed profile facts and exact saved answers, inspect or recheck hosted forms, complete every factual answer that the saved sources support, and remove review notes only when actually resolved. Surface a short grouped list of genuinely personal choices or employer declarations that the candidate still needs to answer; do not guess or mark them confirmed. Then run today's discovery and preparation workflow, with at most 20 new applications across all runs today. Read the saved rolePriority and roleKeywords from Settings and target those roles in their chosen order, including engineering or other careers when selected. Target US full-time graduate and entry-level roles for the saved profile. Exclude internships and follow the saved annual compensation minimum and basis; keep unknown pay in research. Check authorized email and account history for exact prior applications before preparing. Read confirmed work authorization and future sponsorship answers; require sponsorship evidence only when needed or unconfirmed, and verify citizenship, export-control and clearance restrictions separately. Preserve the original résumé and supporting PDFs, and save only complete packets to Ready to review. Do not submit applications. Notify only if a new reviewable batch or user action is ready.`;
 }
 export function codexPrompt(mode: string, batchId?: string, provider: string = 'codex'): string {
  if (!['codex', 'claude'].includes(provider)) throw new Error('Agent provider must be codex or claude.');
@@ -80,7 +81,7 @@ export async function runDiscovery(rt:Runtime,{prepare=false}:{prepare?:boolean}
     const {board,jobs}=response.value;
     const seen=new Set(jobs.map(job=>job.postingId));
     const tracked=jobs.filter(job=>state.jobs.some(old=>sameJob(old,job)));
-    const candidates=jobs.filter(job=>!tracked.includes(job)&&job.roleFamily!=='other' && (/new[ -]?grad|graduate|early[ -]?career|entry[ -]?level|2027|analyst\s*(?:i\b|1\b)|associate product|quantitative (?:trader|researcher)/i.test(job.title) || job.eligible));
+    const candidates=jobs.filter(job=>!tracked.includes(job)&&matchesTargets(job,state.settings) && (/new[ -]?grad|graduate|early[ -]?career|entry[ -]?level|2027|analyst\s*(?:i\b|1\b)|associate product|quantitative (?:trader|researcher)/i.test(job.title) || job.eligible || /0\s*[–-]\s*2\s*years/i.test(job.description)));
     for(const job of [...tracked,...candidates.slice(0,250)]){const local=state.jobs.find(j=>sameJob(j,job));await rt.engine.upsertJob(assessJob(preserveLocal(job,local)));run.discovered++;}
     for(const old of state.jobs.filter(job=>job.source===board.source&&job.board===board.token&&job.status!=='closed'&&!seen.has(job.postingId))) await rt.engine.upsertJob({...old,status:'closed',fetchedAt:new Date().toISOString()});
    }
@@ -88,7 +89,7 @@ export async function runDiscovery(rt:Runtime,{prepare=false}:{prepare?:boolean}
   if(prepare) {
    const s=await rt.store.read();
    const remaining=Math.max(0,s.settings.dailyLimit-s.preparationLedger.filter(x=>x.day===dayKey()).length);
-   const candidates=s.jobs.filter(j=>j.eligible&&!j.dismissed&&!s.packets.some(p=>p.jobId===j.id)).sort((a,b)=>b.score-a.score).slice(0,remaining);
+   const candidates=s.jobs.filter(j=>j.eligible&&!j.dismissed&&!s.packets.some(p=>p.jobId===j.id)).sort((a,b)=>priorityRank(a,s.settings)-priorityRank(b,s.settings)||b.score-a.score).slice(0,remaining);
    for(const job of candidates) {
     try {
      if(job.source==='greenhouse') {

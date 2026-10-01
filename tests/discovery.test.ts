@@ -82,8 +82,8 @@ test('US early-career PM and data receive priority while finance remains a targe
   assert.ok(product.score > finance.score);
   assert.ok(data.score > finance.score);
   assert.ok(product.concerns.some(value => value.includes('does not guarantee')));
-  assert.equal(job({ title: 'FPGA Engineer 2027' }).roleFamily, 'other');
-  assert.equal(job({ title: 'Electrical Engineer 2027' }).eligible, false);
+  assert.equal(job({ title: 'FPGA Engineer 2027' }).roleFamily, 'engineering');
+  assert.equal(job({ title: 'Electrical Engineer 2027' }).eligible, true);
   assert.equal(job({ title: 'Software Engineer - Hardware Tools 2027' }).roleFamily, 'software');
 });
 
@@ -151,8 +151,8 @@ test('privacy and civil liberties software graduates do not match civil engineer
   const listing = { title: 'Privacy & Civil Liberties Engineer - New Grad', description: 'Develop full-stack software products for privacy and AI governance. Must graduate in Fall 2026 or Spring 2027.' };
   assert.equal(job(listing).roleFamily, 'software');
   assert.equal(job(listing).eligible, true);
-  assert.equal(job({ ...listing, description: 'Design civil infrastructure. New graduates in 2027 may apply.' }).roleFamily, 'other');
-  assert.equal(job({ ...listing, title: 'Civil Engineer - New Grad' }).roleFamily, 'other');
+  assert.equal(job({ ...listing, description: 'Design civil infrastructure. New graduates in 2027 may apply.' }).roleFamily, 'engineering');
+  assert.equal(job({ ...listing, title: 'Civil Engineer - New Grad' }).roleFamily, 'engineering');
   assert.equal(job({ ...listing, sponsorship: [] }).eligible, false);
 });
 

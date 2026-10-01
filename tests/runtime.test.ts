@@ -261,3 +261,18 @@ test('backup import refuses a mismatched target résumé without importing any r
  const read = runCli(['state'], target, wrongResume); assert.equal(read.status, 0, read.stderr);
  const state = JSON.parse(read.stdout); assert.equal(state.jobs.length, 0); assert.equal(state.packets.length, 0); assert.equal(state.attempts.length, 0);
 });
+
+test('feeds retain selected engineering and custom title matches without sponsorship evidence', async t => {
+ mockBoard(t, [
+  { id: 201, title: 'Mechanical Engineer — New Grad 2027', content: 'Graduate full-time 2027 role. No visa sponsorship.', location: { name: 'Chicago, IL' }, absolute_url: applicationUrl.replace('123', '201') },
+  { id: 202, title: 'Graduate Science Teacher 2027', content: 'Graduate full-time 2027 role.', location: { name: 'Chicago, IL' }, absolute_url: applicationUrl.replace('123', '202') },
+  { id: 203, title: 'New Graduate Software Engineer 2027', content: 'Graduate full-time 2027 role.', location: { name: 'Chicago, IL' }, absolute_url: applicationUrl.replace('123', '203') },
+ ]);
+ const rt = await fixture([fixtureBoard()]);
+ await rt.engine.updateSettings({ rolePriority: ['engineering'], roleKeywords: ['science teacher'] });
+ await rt.engine.updateProfile({ authorizationAtStart: true, futureSponsorship: false, authorizationConfirmedAt: new Date().toISOString() });
+ await runDiscovery(rt);
+ const state = await rt.store.read();
+ assert.deepEqual(state.jobs.map(job => job.roleFamily).sort(), ['engineering', 'other']);
+ assert.ok(state.jobs.every(job => job.eligible));
+});

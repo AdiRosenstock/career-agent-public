@@ -665,3 +665,57 @@ test('unsupported or unconfirmed candidate cohorts cannot use automatic preparat
  for (const graduation of ['', '2028-05']) {await engine.updateProfile({graduation});await assert.rejects(engine.prepare('one'),/supports June 2027/);assert.equal((await store.read()).packets.length,0);}
  await engine.updateProfile({graduation:'2027-06'});assert.equal((await engine.prepare('one')).jobId,'one');
 });
+
+test('engineering without sponsorship prepares and profile changes restore sponsorship checks', async t => {
+ const { engine, store } = await fixture(t);
+ await engine.updateSettings({ rolePriority: ['engineering'] });
+ await engine.updateProfile({ authorizationNow: true, authorizationAtStart: true, futureSponsorship: false, authorizationConfirmedAt: iso });
+ const { normalizeJob } = await import('../server/discovery.js');
+ const incoming = normalizeJob({ ...job('mechanical'), title: 'Mechanical Engineer — New Grad 2027', description: 'Full-time graduate role starting in 2027. We do not offer visa sponsorship.', sponsorship: [] });
+ const saved = await engine.upsertJob(incoming);
+ assert.equal(saved.roleFamily, 'engineering');
+ assert.equal(saved.eligible, true);
+ assert.deepEqual(eligibilityReasons(saved, NOW, (await store.read()).profile), []);
+ const packet = await engine.prepare(saved.id);
+ await engine.approve([packet.id]);
+ await engine.updateProfile({ futureSponsorship: true });
+ const state = await store.read();
+ assert.equal(state.jobs[0].eligible, false);
+ assert.ok(state.jobs[0].eligibilityReasons.some(reason => /sponsorship/.test(reason)));
+ assert.ok(state.approvals.every(approval => approval.revokedAt));
+ await assert.rejects(engine.beginSubmission(packet.id), /eligible|approved|approval/i);
+ await engine.updateProfile({ futureSponsorship: false, authorizationConfirmedAt: null });
+ assert.equal((await engine.snapshot()).jobs[0].eligible, false, 'An unconfirmed no-sponsorship answer cannot bypass checks');
+});
+
+test('custom role targets retain other careers and changes re-evaluate saved jobs', async t => {
+ const { engine } = await fixture(t);
+ const { normalizeJob } = await import('../server/discovery.js');
+ const incoming = normalizeJob({ ...job('teacher'), title: 'Graduate Science Teacher 2027' });
+ assert.equal(incoming.roleFamily, 'other');
+ await engine.upsertJob(incoming);
+ await engine.updateSettings({ rolePriority: ['engineering'], roleKeywords: ['science teacher'] });
+ assert.equal((await engine.snapshot()).jobs[0].eligible, true);
+ await engine.prepare(incoming.id);
+ await engine.updateSettings({ rolePriority: ['software'], roleKeywords: [] });
+ assert.equal((await engine.snapshot()).jobs[0].eligible, false);
+ await assert.rejects(engine.updateSettings({ rolePriority: ['engineering', 'engineering'] }), /distinct/);
+});
+
+test('no sponsorship requirement does not bypass citizenship, export control, clearance or start authorization', async t => {
+ const { engine } = await fixture(t);
+ await engine.updateProfile({ authorizationAtStart: true, futureSponsorship: false, authorizationConfirmedAt: iso });
+ for (const [id, description, reason] of [
+  ['citizen', 'Must be a U.S. citizen.', /citizenship/],
+  ['export', 'Must meet ITAR export-control requirements.', /Export-control/],
+  ['clearance', 'Must have security clearance.', /Security-clearance/],
+ ] as const) {
+  const saved = await engine.upsertJob(job(id, { description, sponsorship: [] }));
+  assert.equal(saved.eligible, false);
+  assert.ok(saved.eligibilityReasons.some(value => reason.test(value)));
+ }
+ await engine.updateProfile({ usCitizen: true, exportControlEligible: true, clearanceEligible: true });
+ assert.ok((await engine.snapshot()).jobs.every(job => job.eligible));
+ await engine.updateProfile({ authorizationAtStart: false });
+ assert.ok((await engine.snapshot()).jobs.every(job => !job.eligible));
+});

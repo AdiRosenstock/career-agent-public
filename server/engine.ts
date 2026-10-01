@@ -1,9 +1,10 @@
+import { candidateRestrictions, matchesTargets, roleFamilies, sponsorshipNotRequired } from '../shared/candidatePolicy.js';
 import { createHash, randomUUID } from 'node:crypto';
 import { readFileSync, lstatSync } from 'node:fs';
 import type { Answer, AppSnapshot, AppState, ApplicationPacket, Board, CandidateDocument, CandidateProfile, DailyRun, FormQuestion, Job, ManualPreparationAllowance, PacketDraft, PriorApplication, Settings, SubmissionAttempt } from '../shared/types.js';
 import { validatePriorApplications, type Store } from './store.js';
 import { assessCompensation, compensationEligibilityReasons } from './compensation.js';
-import { isGraduateSoftwareStaffRole, isNonPermanentJob, parseAtsJobUrl } from './discovery.js';
+import { isGraduateSoftwareStaffRole, isNonPermanentJob, parseAtsJobUrl, assessJob, sponsorshipStatus } from './discovery.js';
 import { verifiedResumeBytes } from './resume.js';
 
 export class AgentError extends Error { constructor(message: string, public status = 409) { super(message); this.name = 'AgentError'; } }
@@ -68,7 +69,24 @@ function applyCompensationPolicy(job: Job, settings: Settings): Job {
  const reasons = [...existingReasons, ...compensationEligibilityReasons(job, settings.minimumAnnualCompensation ?? null, settings.compensationBasis ?? 'base')];
  return { ...job, eligibilityReasons: [...new Set(reasons)], eligible: !unexplainedBlock && reasons.length === 0 };
 }
-export function eligibilityReasons(job: Job, now = new Date()): string[] {
+function applyCandidatePolicy(job: Job, s: AppState, current = new Date()): Job {
+ const classified = assessJob(job).roleFamily;
+ const updated = { ...job, roleFamily: classified };
+ const unexplainedBlock = !job.eligible && !job.eligibilityReasons.length;
+ const reasons = job.eligibilityReasons.filter(reason => !/sponsorship|selected career tracks|citizenship requirement|Export-control eligibility|Security-clearance eligibility|Work authorization at/i.test(reason));
+ if (!matchesTargets(updated, s.settings)) reasons.push('Role is outside the selected career tracks');
+ const noSponsor = sponsorshipNotRequired(s.profile);
+ if (!noSponsor) {
+  const sponsor = sponsorshipStatus(updated, current.getTime());
+  if (sponsor === 'explicit_no') reasons.push('Posting explicitly excludes required sponsorship');
+  else if (sponsor === 'unknown') reasons.push('Sponsorship evidence needs research');
+ }
+ reasons.push(...candidateRestrictions(updated, s.profile));
+ updated.eligibilityReasons = [...new Set(reasons)];
+ updated.eligible = !unexplainedBlock && updated.eligibilityReasons.length === 0;
+ return updated;
+}
+export function eligibilityReasons(job: Job, now = new Date(), profile?: CandidateProfile): string[] {
  const reasons: string[] = [];
  if (job.status !== 'open') reasons.push('Posting is not confirmed open');
  if (job.dismissed) reasons.push('Posting was dismissed');
@@ -78,8 +96,9 @@ export function eligibilityReasons(job: Job, now = new Date()): string[] {
  // A current restriction always wins over historical sponsorship, including an explicit restriction in the posting itself.
  const restriction = /(?:cannot|unable to|will not|do not|does not|not able to)\s+(?:\w+\s+){0,4}(?:sponsor|provide\s+(?:visa\s+)?sponsorship)|(?:no|without)\s+(?:(?:current|future|visa|immigration|employment)\s+){0,3}sponsorship|sponsorship\s+(?:is\s+)?(?:not available|unavailable|not offered)|(?:must|need to)\s+(?:be\s+)?(?:a\s+)?(?:U\.?S\.?|United States)\s+citizen/i;
  const negative = (value: string) => restriction.test(value.replace(/\b(?:cannot|can't|do not|don't)\s+guarantee\b[^;.!?\n]{0,80}\bsponsorship\b/gi, 'uncertain sponsorship').replace(/\bwith or without\s+(?:(?:visa|immigration|employment)\s+)?sponsorship\b/gi, 'with possible sponsorship'));
- if (negative(job.description) || matching.some(e => e.status === 'explicit_no' || (e.scope === 'role' && negative(e.excerpt)))) reasons.push('Employer or role explicitly excludes sponsorship');
- else if (!matching.some(e => (e.status === 'explicit_yes' && e.scope === 'role' && isFresh(e.checkedAt, now, 24 * 180)) || (e.status === 'history_only' && e.scope === 'employer' && isFresh(e.checkedAt, now, 24 * 730)))) reasons.push('Current sponsorship support or verified employer history is required');
+ if (!sponsorshipNotRequired(profile) && (negative(job.description) || matching.some(e => e.status === 'explicit_no' || (e.scope === 'role' && negative(e.excerpt))))) reasons.push('Employer or role explicitly excludes sponsorship');
+ else if (!sponsorshipNotRequired(profile) && !matching.some(e => (e.status === 'explicit_yes' && e.scope === 'role' && isFresh(e.checkedAt, now, 24 * 180)) || (e.status === 'history_only' && e.scope === 'employer' && isFresh(e.checkedAt, now, 24 * 730)))) reasons.push('Current sponsorship support or verified employer history is required');
+ reasons.push(...candidateRestrictions(job, profile));
  if (isNonPermanentJob(job)) reasons.push('Target is full-time employment; non-permanent roles are excluded');
  const seniorityTitle = isGraduateSoftwareStaffRole(job) ? job.title.replace(/\bMember of Technical Staff\b/i, '') : job.title;
  if (/\b(?:senior|sr\.?|staff|principal|director|vice president|vp|head of)\b/i.test(seniorityTitle)) reasons.push('Role seniority is outside the graduate/entry-level target');
@@ -144,7 +163,7 @@ function attachmentProblems(s: AppState, p: ApplicationPacket, job: Job): string
 function requireAttachments(s: AppState, p: ApplicationPacket, job: Job): void {
  const problems = attachmentProblems(s, p, job); if (problems.length) throw new AgentError(problems.join('; '));
 }
-function getJob(s: AppState, id: string): Job { const job = s.jobs.find(j => j.id === id); if (!job) throw new AgentError('Job not found', 404); return job; }
+function getJob(s: AppState, id: string): Job { const job = s.jobs.find(j => j.id === id); if (!job) throw new AgentError('Job not found', 404); return sponsorshipNotRequired(s.profile) ? applyCandidatePolicy(job, s) : job; }
 function getPacket(s: AppState, id: string): ApplicationPacket { const p = s.packets.find(x => x.id === id); if (!p) throw new AgentError('Packet not found', 404); return p; }
 function revoke(s: AppState, p: ApplicationPacket, at: string): void {
  for (const a of s.approvals.filter(a => a.packetId === p.id && !a.revokedAt)) a.revokedAt = at;
@@ -232,7 +251,7 @@ function supportedAnswer(s: AppState, answer: Answer): boolean {
  return answer.factIds.length > 0 && answer.factIds.every(id => s.profile.facts.some(f => f.id === id && f.confirmed && !!f.source));
 }
 function unresolved(s: AppState, p: ApplicationPacket, job: Job, now = new Date()): string[] {
- const problems: string[] = eligibilityReasons(job, now).map(reason => `Eligibility: ${reason}`);
+ const problems: string[] = eligibilityReasons(job, now, s.profile).map(reason => `Eligibility: ${reason}`);
  if (priorMatches(s, job).length) problems.push('Prior application: Sourced history already records an application for this role');
  problems.push(...priorReviewReasons(s, job));
  problems.push(...compensationEligibilityReasons(job, s.settings.minimumAnnualCompensation ?? null, s.settings.compensationBasis ?? 'base'), ...attachmentProblems(s, p, job));
@@ -266,7 +285,7 @@ function refreshPacket(s: AppState, p: ApplicationPacket, now: Date, extra?: str
  if (!protectedStatuses.has(p.status)) p.status = p.unresolved.length ? 'needs_input' : 'ready';
  p.updatedAt = now.toISOString();
 }
-function requireEligible(job: Job, now: Date): void { const problems = eligibilityReasons(job, now); if (problems.length) throw new AgentError(`Job is not eligible: ${problems.join('; ')}`); }
+function requireEligible(job: Job, now: Date, profile: CandidateProfile): void { const problems = eligibilityReasons(job, now, profile); if (problems.length) throw new AgentError(`Job is not eligible: ${problems.join('; ')}`); }
 function requireApplicationPolicy(s: AppState, job: Job): void {
  if (s.profile.graduation !== '2027-06') throw new AgentError('Automated preparation currently supports June 2027 graduation. Confirm your actual date; other cohorts need manual review and updated matching rules.');
  if (priorMatches(s, job).length) throw new AgentError('A prior application is already recorded for this role; do not apply again');
@@ -279,7 +298,7 @@ export function createEngine(store: Store, options: { workspace?: string; now?: 
  const now = options.now ?? (() => new Date());
  return {
   async snapshot(): Promise<AppSnapshot> {
-   const state = await store.read(); const current = now(); const today = dateKey(current, state.settings.timezone);
+   const state = await store.read(); state.jobs = state.jobs.map(job => applyPriorApplicationPolicy(state, applyCandidatePolicy(job, state, now()))); const current = now(); const today = dateKey(current, state.settings.timezone);
    const preparedToday = state.preparationLedger.filter(l => l.day === today).length;
    const manualLimitToday = Math.max(state.settings.dailyLimit, ...(state.manualPreparationAllowances ?? []).filter(allowance => allowance.day === today).map(allowance => allowance.limit));
    const successful = state.runs.filter(r => r.status === 'complete').sort((a, b) => b.startedAt.localeCompare(a.startedAt));
@@ -289,7 +308,7 @@ export function createEngine(store: Store, options: { workspace?: string; now?: 
   },
   async upsertJob(input: Job): Promise<Job> {
    return store.update(s => {
-    const incoming = applyPriorApplicationPolicy(s, applyCompensationPolicy(structuredClone(input), s.settings)); const existing = s.jobs.find(j => sameJob(j, incoming));
+    const incoming = applyPriorApplicationPolicy(s, applyCandidatePolicy(applyCompensationPolicy(structuredClone(input), s.settings), s, now())); const existing = s.jobs.find(j => sameJob(j, incoming));
     if (!incoming.company.trim() || !incoming.title.trim()) throw new AgentError('Job company and title are required', 400);
     if (existing) {
      incoming.id = existing.id;
@@ -303,7 +322,7 @@ export function createEngine(store: Store, options: { workspace?: string; now?: 
     const packet = s.packets.find(p => p.jobId === incoming.id);
     if (packet && !protectedStatuses.has(packet.status)) {
      const hash = packetHash(s, packet, incoming);
-     if (hash !== packet.contentHash || packet.formVersion !== incoming.formVersion || eligibilityReasons(incoming, now()).length) {
+     if (hash !== packet.contentHash || packet.formVersion !== incoming.formVersion || eligibilityReasons(incoming, now(), s.profile).length) {
       revoke(s, packet, now().toISOString()); refreshPacket(s, packet, now());
      }
     }
@@ -323,7 +342,7 @@ export function createEngine(store: Store, options: { workspace?: string; now?: 
   },
   async prepare(jobId: string, draft: PacketDraft = {}, preparation: { manualAllowanceId?: string } = {}): Promise<ApplicationPacket> {
    return store.update(s => {
-    const current = now(); const job = getJob(s, jobId); requireApplicationPolicy(s, job); requireEligible(job, current); requireResume(s);
+    const current = now(); const job = getJob(s, jobId); requireApplicationPolicy(s, job); requireEligible(job, current, s.profile); requireResume(s);
     const existing = s.packets.find(p => p.jobId === jobId); if (existing) return existing;
     if (s.attempts.some(a => sameJob(getJob(s, a.jobId), job) && ['submitted', 'in_progress', 'unknown'].includes(a.outcome))) throw new AgentError('Job already has a submitted or unresolved application');
     const day = dateKey(current, s.settings.timezone);
@@ -354,7 +373,7 @@ export function createEngine(store: Store, options: { workspace?: string; now?: 
     if (!packetIds.length || new Set(packetIds).size !== packetIds.length) throw new AgentError('Select one or more distinct packets', 400);
     requireResume(s); const batchId = randomUUID(); const approvedAt = now().toISOString();
     for (const id of packetIds) {
-     const p = getPacket(s, id); const j = getJob(s, p.jobId); requireApplicationPolicy(s, j); requireEligible(j, now()); requireAttachments(s, p, j);
+     const p = getPacket(s, id); const j = getJob(s, p.jobId); requireApplicationPolicy(s, j); requireEligible(j, now(), s.profile); requireAttachments(s, p, j);
      if (protectedStatuses.has(p.status)) throw new AgentError('Cannot approve a submitted or unresolved packet');
      const problems = [...new Set([...p.unresolved, ...unresolved(s, p, j, now())])];
      if (problems.length) throw new AgentError(`Packet needs input: ${problems.join('; ')}`);
@@ -369,7 +388,7 @@ export function createEngine(store: Store, options: { workspace?: string; now?: 
   },
   async beginSubmission(packetId: string): Promise<SubmissionAttempt> {
    return store.update(s => {
-    const p = getPacket(s, packetId); const j = getJob(s, p.jobId); requireApplicationPolicy(s, j); requireResume(s); requireEligible(j, now()); requireAttachments(s, p, j);
+    const p = getPacket(s, packetId); const j = getJob(s, p.jobId); requireApplicationPolicy(s, j); requireResume(s); requireEligible(j, now(), s.profile); requireAttachments(s, p, j);
     if (!['greenhouse', 'lever'].includes(j.source)) throw new AgentError('This applicant tracking system requires manual handoff in v1');
     if (!isFresh(j.fetchedAt, now(), 24) || !isFresh(j.formInspectedAt, now(), 24)) throw new AgentError('Recheck the open posting and live application form within 24 hours before submitting');
     if (s.attempts.some(a => a.outcome === 'in_progress')) throw new AgentError('Another submission is in progress; reconcile it before starting another');
@@ -445,6 +464,7 @@ export function createEngine(store: Store, options: { workspace?: string; now?: 
      for (const document of patch.documents) if (!documentValid(document)) throw new AgentError(`Document ${document.label} is missing, empty, or does not match its SHA256`);
     }
     s.profile = { ...s.profile, ...structuredClone(patch), resume: s.profile.resume };
+    s.jobs = s.jobs.map(job => applyPriorApplicationPolicy(s, applyCandidatePolicy(job, s, now())));
     for (const p of s.packets.filter(p => !protectedStatuses.has(p.status))) { revoke(s, p, now().toISOString()); p.version++; fillConfirmedAnswers(s, p, getJob(s, p.jobId)); refreshPacket(s, p, now()); }
     return s.profile;
    });
@@ -455,11 +475,13 @@ export function createEngine(store: Store, options: { workspace?: string; now?: 
     if (patch.timezone && patch.timezone !== 'America/Chicago') throw new AgentError('The daily ledger is fixed to America/Chicago');
     if (patch.dailyLimit !== undefined && (!Number.isInteger(patch.dailyLimit) || patch.dailyLimit < 1 || patch.dailyLimit > 20)) throw new AgentError('Daily preparation limit must be between 1 and 20', 400);
     if (patch.minimumAnnualCompensation !== undefined && patch.minimumAnnualCompensation !== null && (!Number.isFinite(patch.minimumAnnualCompensation) || patch.minimumAnnualCompensation < 0 || patch.minimumAnnualCompensation > 10_000_000)) throw new AgentError('Minimum annual compensation must be a nonnegative annual USD amount', 400);
-    const changedPolicy = (patch.minimumAnnualCompensation !== undefined && patch.minimumAnnualCompensation !== (s.settings.minimumAnnualCompensation ?? null)) || (patch.compensationBasis !== undefined && patch.compensationBasis !== (s.settings.compensationBasis ?? 'base'));
+    if (patch.rolePriority && (new Set(patch.rolePriority).size !== patch.rolePriority.length || patch.rolePriority.some(role => !roleFamilies.includes(role)))) throw new AgentError('Choose distinct supported career tracks', 400);
+    if (patch.roleKeywords && (patch.roleKeywords.length > 30 || patch.roleKeywords.some(term => typeof term !== 'string' || !term.trim() || term.length > 100))) throw new AgentError('Choose up to 30 role title terms', 400);
+    const changedPolicy = patch.rolePriority !== undefined || patch.roleKeywords !== undefined || (patch.minimumAnnualCompensation !== undefined && patch.minimumAnnualCompensation !== (s.settings.minimumAnnualCompensation ?? null)) || (patch.compensationBasis !== undefined && patch.compensationBasis !== (s.settings.compensationBasis ?? 'base'));
     if (changedPolicy && s.attempts.some(a => a.outcome === 'in_progress')) throw new AgentError('Finish or recover the active submission before changing compensation requirements');
     s.settings = { ...s.settings, ...patch };
     if (changedPolicy) {
-     s.jobs = s.jobs.map(job => applyPriorApplicationPolicy(s, applyCompensationPolicy(job, s.settings)));
+     s.jobs = s.jobs.map(job => applyPriorApplicationPolicy(s, applyCandidatePolicy(applyCompensationPolicy(job, s.settings), s, now())));
      for (const p of s.packets.filter(p => !protectedStatuses.has(p.status))) { revoke(s, p, now().toISOString()); p.version++; refreshPacket(s, p, now()); }
     }
     return s.settings;

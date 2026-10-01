@@ -1,3 +1,4 @@
+import { roleFamilies } from '../shared/candidatePolicy.js';
 import express from 'express';
 import { createServer as createViteServer } from 'vite';
 import { existsSync } from 'node:fs';
@@ -71,11 +72,11 @@ app.post('/api/approvals',route(async(req,res)=>{
 }));
 app.post('/api/profile',route(async(req,res)=>{
  const booleanAnswer=z.boolean().nullable();
- const input=z.object({name:z.string().min(1).max(300).optional(),email:z.email().optional(),phone:z.string().max(100).optional(),linkedin:z.union([z.url(),z.literal('')]).optional(),github:z.union([z.url(),z.literal('')]).optional(),graduation:z.string().regex(/^$|^\d{4}-(?:0[1-9]|1[0-2])$/).optional(),visaStatus:z.string().max(200).optional(),anticipatedOPT:z.boolean().optional(),earliestStart:z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),salaryPreference:z.string().max(500).nullable().optional(),authorizationNow:booleanAnswer.optional(),authorizationAtStart:booleanAnswer.optional(),futureSponsorship:booleanAnswer.optional(),authorizationConfirmedAt:z.string().nullable().optional(),savedAnswers:z.array(z.object({id:z.string(),question:z.string().min(1).max(3000),answer:z.string().max(15000),confirmedAt:z.string()})).max(500).optional()}).parse(req.body);
+ const input=z.object({name:z.string().min(1).max(300).optional(),email:z.email().optional(),phone:z.string().max(100).optional(),linkedin:z.union([z.url(),z.literal('')]).optional(),github:z.union([z.url(),z.literal('')]).optional(),graduation:z.string().regex(/^$|^\d{4}-(?:0[1-9]|1[0-2])$/).optional(),visaStatus:z.string().max(200).optional(),anticipatedOPT:z.boolean().optional(),earliestStart:z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),salaryPreference:z.string().max(500).nullable().optional(),usCitizen:booleanAnswer.optional(),exportControlEligible:booleanAnswer.optional(),clearanceEligible:booleanAnswer.optional(),authorizationNow:booleanAnswer.optional(),authorizationAtStart:booleanAnswer.optional(),futureSponsorship:booleanAnswer.optional(),authorizationConfirmedAt:z.string().nullable().optional(),savedAnswers:z.array(z.object({id:z.string(),question:z.string().min(1).max(3000),answer:z.string().max(15000),confirmedAt:z.string()})).max(500).optional()}).parse(req.body);
  res.json(await rt.engine.updateProfile(input));
 }));
 app.post('/api/settings',route(async(req,res)=>{
- const input=z.object({dailyLimit:z.number().int().min(1).max(20).optional(),minimumAnnualCompensation:z.number().int().min(0).max(10000000).nullable().optional(),compensationBasis:z.enum(['base','total']).optional()}).strict().parse(req.body);res.json(await rt.engine.updateSettings(input));
+ const input=z.object({rolePriority:z.array(z.enum(roleFamilies)).max(7).optional(),roleKeywords:z.array(z.string().trim().min(1).max(100)).max(30).optional(),dailyLimit:z.number().int().min(1).max(20).optional(),minimumAnnualCompensation:z.number().int().min(0).max(10000000).nullable().optional(),compensationBasis:z.enum(['base','total']).optional()}).strict().parse(req.body);res.json(await rt.engine.updateSettings(input));
 }));
 app.post('/api/boards',route(async(req,res)=>{
  const data=z.object({id:z.string().optional(),company:z.string().min(1).max(300),source:z.enum(['greenhouse','lever','ashby']),token:z.string().min(1).max(200),enabled:z.boolean().optional(),sponsorship:z.array(z.object({id:z.string(),status:z.enum(['explicit_yes','history_only','unknown','explicit_no']),sourceUrl:z.url(),excerpt:z.string().min(1).max(10000),checkedAt:z.string(),employerName:z.string(),scope:z.enum(['role','employer']),entityMatch:z.boolean()})).optional()}).parse(req.body);

@@ -1,3 +1,4 @@
+import { sponsorshipNotRequired } from './candidatePolicy';
 import type { AppSnapshot, CandidateProfile, Job } from './types';
 
 export function financeRole(job: Job) {
@@ -9,7 +10,7 @@ export function financeRole(job: Job) {
 export function applicationGroup(job: Job, state: AppSnapshot): 'active' | 'research' | 'archived' | 'applied' {
  const prior = state.meta.appliedJobIds?.includes(job.id) ?? (state.priorApplications || []).some(a => a.matchScope !== 'needs_review' && a.company.toLowerCase() === job.company.toLowerCase() && (a.postingId && job.postingId ? a.postingId === job.postingId : a.title.toLowerCase() === job.title.toLowerCase()));
  if (prior || state.attempts.some(a => a.jobId === job.id && a.outcome === 'submitted')) return 'applied';
- if (job.dismissed || job.status === 'closed' || job.sponsorship.some(e => e.status === 'explicit_no')) return 'archived';
+ if (job.dismissed || job.status === 'closed' || (!sponsorshipNotRequired(state.profile) && job.sponsorship.some(e => e.status === 'explicit_no'))) return 'archived';
  // Eligible here means the tracker has passed its checks; history is still not a role-level guarantee.
  const pay = (state.meta as AppSnapshot['meta'] & { salaryAssessments?: Record<string, {status: string}> }).salaryAssessments?.[job.id]?.status;
  if ((state.settings.minimumAnnualCompensation || 0) > 0 && pay === 'below') return 'archived';

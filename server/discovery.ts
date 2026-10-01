@@ -142,28 +142,28 @@ function descriptionEvidence(job: Job): SponsorshipEvidence[] {
   });
 }
 const entity = (value: string): string => value.toLowerCase().replace(/[^a-z0-9]/g, '');
-function evidenceValid(evidence: SponsorshipEvidence, job: Job): boolean {
+function evidenceValid(evidence: SponsorshipEvidence, job: Job, now = Date.now()): boolean {
   if (!evidence.entityMatch || entity(evidence.employerName) !== entity(job.company) || !evidence.excerpt.trim() || !date(evidence.checkedAt)) return false;
   try { webUrl(evidence.sourceUrl); } catch { return false; }
-  return Date.parse(evidence.checkedAt) <= Date.now() + 86_400_000;
+  return Date.parse(evidence.checkedAt) <= now + 86_400_000;
 }
-export function sponsorshipStatus(job: Job): SponsorshipStatus {
-  const evidence = [...job.sponsorship, ...descriptionEvidence(job)].filter(e => evidenceValid(e, job));
+export function sponsorshipStatus(job: Job, now = Date.now()): SponsorshipStatus {
+  const evidence = [...job.sponsorship, ...descriptionEvidence(job)].filter(e => evidenceValid(e, job, now));
   if (evidence.some(e => e.status === 'explicit_no' || (e.scope === 'role' && isNegativeSponsorship(e.excerpt)))) return 'explicit_no';
-  if (evidence.some(e => e.status === 'explicit_yes' && e.scope === 'role' && isPositiveSponsorship(e.excerpt) && Date.now() - Date.parse(e.checkedAt) <= 180 * 86_400_000)) return 'explicit_yes';
-  if (evidence.some(e => e.status === 'history_only' && e.scope === 'employer' && Date.now() - Date.parse(e.checkedAt) <= 730 * 86_400_000)) return 'history_only';
+  if (evidence.some(e => e.status === 'explicit_yes' && e.scope === 'role' && isPositiveSponsorship(e.excerpt) && now - Date.parse(e.checkedAt) <= 180 * 86_400_000)) return 'explicit_yes';
+  if (evidence.some(e => e.status === 'history_only' && e.scope === 'employer' && now - Date.parse(e.checkedAt) <= 730 * 86_400_000)) return 'history_only';
   return 'unknown';
 }
 
-function roleFamily(title: string): RoleFamily {
+export function roleFamily(title: string): RoleFamily {
   if (/\b(?:sales\s*(?:&|and)\s*trading|wealth\s+management|asset\s+management|private\s+bank|real estate acquisitions)\b/i.test(title)) return 'finance';
   if (/\b(?:account\s+executive|account\s+manager|sales|business\s+development|recruiter|talent\s+acquisition)\b/i.test(title)) return 'other';
   if (/\b(?:product\s+(?:manager|management|analyst)|apm)\b/i.test(title)) return 'product';
   if (/\b(?:data|analytics|business intelligence|machine learning|statistical|bi analyst)\b/i.test(title)) return 'data';
   if (/\b(?:financ\w*|investment|banking|quantitative|quant|treasury|risk|valuation|equity|portfolio|accounting|fp&a|credit|fundamental research analyst|discretionary trader)\b/i.test(title)) return 'finance';
   if (/\b(?:consult\w*|strategy|strategic|business analyst)\b/i.test(title)) return 'consulting';
-  if (/\b(?:hardware|fpga|electrical|mechanical|civil|manufacturing|chemical|aerospace|firmware)\b/i.test(title) && !/\b(?:software|swe|developer|frontend|backend|full.stack)\b/i.test(title)) return 'other';
-  if (/\b(?:software|swe|developer|engineer|programmer)\b/i.test(title)) return 'software';
+  if (/\b(?:hardware|fpga|electrical|mechanical|civil|manufacturing|chemical|aerospace|firmware|propulsion|thermal|structural|robotics|industrial|materials|avionics|mechatronics)\b/i.test(title) && !/\b(?:software|swe|developer|frontend|backend|full.stack)\b/i.test(title)) return 'engineering';
+  if (/\b(?:software|swe|developer|programmer|forward deployed|systems? engineer|test engineer|devops|site reliability)\b/i.test(title)) return 'software';
   return 'other';
 }
 const US_STATES = 'Alabama|Alaska|Arizona|Arkansas|California|Colorado|Connecticut|Delaware|Florida|Hawaii|Idaho|Illinois|Indiana|Iowa|Kansas|Kentucky|Louisiana|Maine|Maryland|Massachusetts|Michigan|Minnesota|Mississippi|Missouri|Montana|Nebraska|Nevada|New Hampshire|New Jersey|New Mexico|New York|North Carolina|North Dakota|Ohio|Oklahoma|Oregon|Pennsylvania|Rhode Island|South Carolina|South Dakota|Tennessee|Texas|Utah|Vermont|Virginia|Washington|West Virginia|Wisconsin|Wyoming';
@@ -281,7 +281,7 @@ export function assessJob(input: Job, policy: JobAssessmentPolicy = {}): Job {
   if (job.roleFamily === 'other' && graduateSoftwareStaff) job.roleFamily = 'software';
   const privacySoftwareGraduate = /\bPrivacy (?:&|and) Civil Liberties Engineer\b[^]*\bNew Grad(?:uate)?\b/i.test(input.title)
     && /\bfull[ -]stack software products\b/i.test(input.description);
-  if (job.roleFamily === 'other' && privacySoftwareGraduate) job.roleFamily = 'software';
+  if (privacySoftwareGraduate) job.roleFamily = 'software';
   const coreDevelopment = /^InterSystems(?: Corporation)?$/i.test(input.company.trim())
     && /^Core Development Program$/i.test(input.title.trim())
     && /\bsoftware engineering\b/i.test(input.description)
@@ -309,7 +309,7 @@ export function assessJob(input: Job, policy: JobAssessmentPolicy = {}): Job {
     job.fitReasons.push('Sierra APX combines Agent Development and Core Product rotations');
   }
   const block = (reason: string) => job.eligibilityReasons.push(reason);
-  let score = ({ product: 40, data: 38, finance: 35, consulting: 30, software: 27, other: 0 })[job.roleFamily];
+  let score = ({ product: 40, data: 38, finance: 35, consulting: 30, software: 27, engineering: 27, other: 0 })[job.roleFamily];
   if (job.roleFamily !== 'other') job.fitReasons.push(`${job.roleFamily} role matches a target career track`);
   else block('Role is outside the selected career tracks');
   if (job.status !== 'open') block(job.status === 'closed' ? 'Posting is closed' : 'Posting availability needs verification');
@@ -354,7 +354,7 @@ export function assessJob(input: Job, policy: JobAssessmentPolicy = {}): Job {
   else job.concerns.push('2027 start date is not explicit; verify before approval');
   if (earlyCareer.title) { score += 10; job.fitReasons.push('Title signals an early-career opportunity'); }
   else if (earlyCareer.description && !earlyCareer.excluded) { score += 8; job.fitReasons.push('Description explicitly supports graduate or 0–2 years experience candidates'); }
-  if (/\bforward\s+deployed\b/i.test(job.title) && job.roleFamily === 'software') { score += 8; job.fitReasons.push('Forward Deployed Engineer matches your stated interest'); }
+  if (/\bforward\s+deployed\b/i.test(job.title) && job.roleFamily === 'software') { score += 8; job.fitReasons.push('Forward Deployed Engineer software role'); }
   if (job.deadline && Date.parse(job.deadline) < Date.now()) block('Application deadline has passed');
   const sponsor = sponsorshipStatus(job);
   if (sponsor === 'explicit_no') block('Posting explicitly excludes required sponsorship');
@@ -362,7 +362,7 @@ export function assessJob(input: Job, policy: JobAssessmentPolicy = {}): Job {
   else if (sponsor === 'history_only') { score += 5; job.concerns.push('Employer sponsorship history does not guarantee sponsorship for this role'); }
   else { score += 10; job.fitReasons.push('Current role text explicitly offers sponsorship'); }
   if (job.postedAt && Date.now() - Date.parse(job.postedAt) < 14 * 86_400_000 && Date.parse(job.postedAt) <= Date.now()) { score += 5; job.fitReasons.push('Published within the past two weeks'); }
-  if (/\b(?:financial|finance|valuation|financial model(?:ing)?|capital markets|investment|portfolio|accounting)\b/i.test(text)) { score += 5; job.fitReasons.push('Finance domain aligns with your stated strongest area'); }
+  if (/\b(?:financial|finance|valuation|financial model(?:ing)?|capital markets|investment|portfolio|accounting)\b/i.test(text)) { score += 5; job.fitReasons.push('Posting describes a finance domain'); }
   job.eligibilityReasons.push(...compensationEligibilityReasons(job, policy.minimumAnnualCompensation ?? null, policy.compensationBasis ?? 'base'));
   job.eligible = job.eligibilityReasons.length === 0;
   job.score = Math.max(0, Math.min(100, score));
