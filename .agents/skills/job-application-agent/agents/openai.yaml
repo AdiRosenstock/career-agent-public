@@ -1,0 +1,5 @@
+interface:
+  display_name: "Job Application Agent"
+  short_description: "Research jobs and prepare approved applications"
+  brand_color: "#203F33"
+  default_prompt: "Use $job-application-agent to prepare today's sourced application review queue."

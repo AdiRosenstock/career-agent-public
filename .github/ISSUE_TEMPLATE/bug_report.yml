@@ -1,0 +1,27 @@
+name: Bug report
+description: Report a reproducible issue using fictional, sanitized data.
+body:
+  - type: markdown
+    attributes:
+      value: "Do not include candidate state, credentials, personal documents or private screenshots. Report vulnerabilities privately."
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: OS, Node version, browser, repository commit
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Sanitized evidence

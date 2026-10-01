@@ -1,0 +1,28 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtemp, writeFile, rm, readFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { spawn } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import { request } from 'node:http';
+
+test('loopback dashboard API protects writes, serves original bytes, and rejects invalid input',async t=>{
+ const dir=await mkdtemp(path.join(tmpdir(),'career-api-'));const resume=path.join(dir,'source.pdf');await writeFile(resume,'%PDF-1.4 mock original',{mode:0o600});
+ const child=spawn(process.execPath,['--import','tsx','server/index.ts'],{cwd:process.cwd(),env:{...process.env,CAREER_DATA_DIR:path.join(dir,'.data'),CAREER_RESUME_PATH:resume,CAREER_BACKEND:'sqlite',PORT:'0'},stdio:['ignore','pipe','pipe']});
+ let output='';let errors='';child.stderr.on('data',b=>{errors+=b.toString();});
+ t.after(async()=>{child.kill('SIGTERM');await new Promise<void>(resolve=>{if(child.exitCode!==null)resolve();else {const timer=setTimeout(()=>{child.kill('SIGKILL');resolve();},2000);child.once('exit',()=>{clearTimeout(timer);resolve();});}});await rm(dir,{recursive:true,force:true});});
+ const base=await new Promise<string>((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error(`Server startup timeout: ${errors}`)),15000);child.stdout.on('data',b=>{output+=b.toString();const match=output.match(/Career Agent ready: (http:\/\/127\.0\.0\.1:\d+)/);if(match){clearTimeout(timer);resolve(match[1]);}});child.once('exit',code=>{clearTimeout(timer);reject(new Error(`Server exited ${code}: ${errors}`));});});
+ const state=await fetch(`${base}/api/state`).then(r=>r.json()) as any;assert.equal(state.meta.backend,'sqlite');assert.equal(state.meta.resumeValid,true);assert.equal(state.profile.authorizationNow,null);
+ const resumeResponse=await fetch(`${base}/api/resume`);assert.equal(resumeResponse.status,200);assert.match(resumeResponse.headers.get('content-disposition')||'',/source\.pdf/);const bytes=new Uint8Array(await resumeResponse.arrayBuffer());assert.equal(createHash('sha256').update(bytes).digest('hex'),state.profile.resume.sha256);
+ const post=(body:unknown,headers:Record<string,string>={})=>fetch(`${base}/api/settings`,{method:'POST',headers:{'Content-Type':'application/json',...headers},body:JSON.stringify(body)});
+ assert.equal((await post({dailyLimit:5})).status,403);
+ assert.equal((await post({dailyLimit:5},{'X-Career-Agent':'dashboard',Origin:'https://malicious.example'})).status,403);
+ assert.equal((await post({dailyLimit:21},{'X-Career-Agent':'dashboard'})).status,400);
+ assert.equal((await post({dailyLimit:5},{'X-Career-Agent':'dashboard'})).status,200);
+ const badHost=await new Promise<number|undefined>((resolve,reject)=>{const req=request(`${base}/api/state`,{headers:{Host:'attacker.example'}},res=>{res.resume();resolve(res.statusCode);});req.on('error',reject);req.end();});assert.equal(badHost,403);
+ const confirmation=await fetch(`${base}/api/approvals`,{method:'POST',headers:{'Content-Type':'application/json','X-Career-Agent':'dashboard'},body:JSON.stringify({packetIds:[]})});assert.equal(confirmation.status,400);
+ const badProfile=await fetch(`${base}/api/profile`,{method:'POST',headers:{'Content-Type':'application/json','X-Career-Agent':'dashboard'},body:JSON.stringify({authorizationNow:'guess'})});assert.equal(badProfile.status,400);
+ await writeFile(state.profile.resume.path,'%PDF-1.4 tampered');assert.equal((await fetch(`${base}/api/resume`)).status,409);
+ const backup=await fetch(`${base}/api/export`);assert.match(backup.headers.get('content-disposition')||'',/attachment/);assert.equal((await backup.json() as any).settings.dailyLimit,5);
+});
