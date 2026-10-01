@@ -11,15 +11,75 @@ Research opportunities. Prepare with facts. Review every application.
 ![Local first](https://img.shields.io/badge/storage-local_first-244D3D)
 [![MIT](https://img.shields.io/badge/license-MIT-244D3D)](LICENSE)
 
-[Get started](#quick-start) · [Use with Codex or Claude](docs/AGENT_SETUP.md) · [Architecture](docs/ARCHITECTURE.md) · [Design decisions](docs/DESIGN_DECISIONS.md) · [Interface](docs/UI_DESIGN.md)
+[Start here](#start-here-no-coding-experience-needed) · [Use with Codex or Claude](docs/AGENT_SETUP.md) · [Architecture](docs/ARCHITECTURE.md) · [Design decisions](docs/DESIGN_DECISIONS.md) · [Interface](docs/UI_DESIGN.md)
 
 </div>
 
 ---
 
-## Let Codex or Claude Code set it up
+## Start here: no coding experience needed
 
-Already have Codex or Claude Code? **Copy this entire prompt into its chat.** It asks your assistant to install and run the app, then guide you through your own profile. You do not need to understand the commands first. Your assistant may need permission to install software or access a local file.
+Career Agent helps you organize job applications on your own computer. **You do not need to write code.** A coding assistant can handle installation and guide you through the app, although you may still need to approve an installation, sign in, or choose a file.
+
+### What you need
+
+- Your own computer with internet access.
+- **Codex or Claude Code with access to that computer.** These are separate tools; Career Agent does not install or provide them. If you already have one, use it. If you have neither, ask someone to help you set one up first. An ordinary website chat without computer access cannot install this app for you.
+- Your résumé saved as a PDF. If you do not have it ready, you can try the fictional demo first.
+
+### What to do
+
+1. Open **Codex or Claude Code** on your computer and start a new chat.
+2. Copy the short message in the box below. Paste it into the assistant's chat and send it. You do not paste it into GitHub or a terminal.
+3. Let the assistant work. If it asks to choose a folder, pick somewhere easy to find, such as Documents. If it asks for your résumé, tell it where the PDF is saved. You can say **“I don't know how to find that; walk me through it.”**
+4. When setup is finished, click the dashboard link the assistant gives you. A working dashboard opens in your browser with **Applications**, **Your profile**, and **Settings** in the left menu.
+5. Ask the assistant to walk you through those screens, one at a time.
+
+**Copy this message:**
+
+```text
+Please install Career Agent on my computer and help me use it:
+https://github.com/AdiRosenstock/career-agent-public
+
+I have no technical experience. Read the project's README and setup instructions,
+then do the installation for me. Explain anything I need to click in plain
+language, one step at a time. Do not just give me a list of terminal commands.
+
+Preserve any existing files and settings. Start with the easiest local setup.
+Ask where my original résumé PDF is saved and help me find it if needed.
+If it is not ready, let me try the fictional demo instead. Never change my PDF.
+
+Check that the app works, give me a clickable dashboard link, and guide me
+through my profile, preferences and job filters. Check whether the current
+June 2027 US graduate limitations fit me before preparing applications.
+Explain how to reopen the app next time and what needs to keep running.
+
+If something fails, investigate and help fix it. If you cannot do a step,
+explain exactly what I need to click or who can help. Do not ask for passwords
+or secret keys in chat. Do not guess my answers, submit applications, send
+messages or start automations.
+```
+
+### If you get stuck
+
+Paste this into the same assistant chat:
+
+> I'm stuck at this step: [describe what you see]. Please help me fix it. Give me one action at a time and explain where to click. I don't know technical terms.
+
+You do not need to understand Git, Node, databases or servers before trying the app. The assistant uses the instructions below to handle those parts. Your agent may have subscription or usage costs; Career Agent's code is free.
+
+### Come back another day
+
+Reopen the same assistant chat and say:
+
+> Open my existing Career Agent app again. Keep my saved information and do not repeat setup. Give me the dashboard link.
+
+This is a local app: closing its running process or restarting your computer stops it until you start it again. The saved records remain on disk. A browser bookmark alone does not start the app.
+
+<details>
+<summary>Detailed installation instructions for the assistant</summary>
+
+The longer prompt below is optional. It specifies the same setup with exact commands for an assistant or someone helping you.
 
 ```text
 Install and set up Career Agent on my computer:
@@ -61,6 +121,8 @@ Do not submit applications, send messages, start automations, publish my
 personal data, or invent profile answers. End with the working local URL,
 what was installed, and any genuinely unfinished setup steps.
 ```
+
+</details>
 
 Prefer doing it yourself? Follow the [step-by-step quick start](#quick-start) below. To try fictional data first, tell your assistant: **“Set up the demo only; do not ask for my résumé yet.”**
 
