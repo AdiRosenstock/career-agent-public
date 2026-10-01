@@ -1,5 +1,25 @@
 import type { AppSnapshot, Job, SponsorshipStatus } from './types';
 
+const normalizeSearch = (value: string) => value.normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase().replace(/\s+/g, ' ').trim();
+
+/** Terms may appear in any order. Quotes keep phrases together; a leading minus excludes a term. */
+export function matchesJobSearch(job: Job, query: string) {
+ const fields = [job.company, job.title, job.location, job.roleFamily].map(normalizeSearch);
+ const terms = query.replace(/[“”]/g, '"').match(/-?"[^"]+"|-?[^\s"]+/g) || [];
+ return terms.every(raw => {
+  const excluded = raw.startsWith('-') && raw.length > 1;
+  const term = normalizeSearch((excluded ? raw.slice(1) : raw).replace(/^"|"$/g, ''));
+  if (!term) return true;
+  const found = fields.some(field => field.includes(term));
+  return excluded ? !found : found;
+ });
+}
+
+export function jobDate(job: Job) {
+ const value = Date.parse(job.postedAt || job.fetchedAt);
+ return Number.isFinite(value) ? value : 0;
+}
+
 /** Employer history is evidence for research, never a role-level promise. */
 export function sponsorshipCategory(job: Job, now = Date.now()): SponsorshipStatus {
  const entity = (value: string) => value.toLowerCase().replace(/[^a-z0-9]/g, '');

@@ -4396,3 +4396,8 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 .application-dashboard .role-main h3 { color:#263d5d; }
 .application-dashboard .onboarding-banner { background:#fff; margin-bottom:20px; }
 @media(max-width:620px) { .application-dashboard .page-heading { align-items:flex-start; gap:16px; flex-direction:column; } .filter-evidence-note { margin-left:0; flex-basis:100%; margin-top:5px; } }
+
+/* Search guidance stays close to the controls it explains. */
+.search-guidance { margin:0; padding:0 24px 14px; color:#465b78; font-size:12px; line-height:1.6; }
+.search-results-summary { padding:0 24px 14px; color:#465b78; font-size:13px; }
+@media(max-width:620px) { .search-guidance, .search-results-summary { padding-left:18px; padding-right:18px; } }

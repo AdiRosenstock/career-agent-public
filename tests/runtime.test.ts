@@ -273,6 +273,22 @@ test('feeds retain selected engineering and custom title matches without sponsor
  await rt.engine.updateProfile({ authorizationAtStart: true, futureSponsorship: false, authorizationConfirmedAt: new Date().toISOString() });
  await runDiscovery(rt);
  const state = await rt.store.read();
- assert.deepEqual(state.jobs.map(job => job.roleFamily).sort(), ['engineering', 'other']);
+ assert.deepEqual(state.jobs.map(job => job.roleFamily).sort(), ['mechanical', 'other']);
  assert.ok(state.jobs.every(job => job.eligible));
+});
+
+
+test('experienced discovery retains selected senior and marketing paths without graduate keywords', async t => {
+ mockBoard(t, [
+  {id:301,title:'Senior Software Engineer',content:'Full-time permanent position. Requires five years of software engineering experience.',location:{name:'Chicago, IL'},absolute_url:applicationUrl.replace('123','301')},
+  {id:302,title:'Marketing Specialist',content:'Full-time permanent position. Requires three years of marketing experience.',location:{name:'Chicago, IL'},absolute_url:applicationUrl.replace('123','302')},
+  {id:303,title:'Mechanical Engineer',content:'Full-time permanent position. Requires three years of mechanical engineering experience.',location:{name:'Chicago, IL'},absolute_url:applicationUrl.replace('123','303')},
+ ]);
+ const rt = await fixture([fixtureBoard()]);
+ await rt.engine.updateSettings({careerStage:'experienced',yearsExperience:5,rolePriority:['software','marketing'],careerTargetsConfirmed:true});
+ await rt.engine.updateProfile({authorizationAtStart:true,futureSponsorship:false,authorizationConfirmedAt:new Date().toISOString()});
+ await runDiscovery(rt);
+ const state = await rt.store.read();
+ assert.deepEqual(state.jobs.map(job=>job.roleFamily).sort(),['marketing','software']);
+ assert.ok(state.jobs.every(job=>job.eligible));
 });

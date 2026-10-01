@@ -673,7 +673,7 @@ test('engineering without sponsorship prepares and profile changes restore spons
  const { normalizeJob } = await import('../server/discovery.js');
  const incoming = normalizeJob({ ...job('mechanical'), title: 'Mechanical Engineer — New Grad 2027', description: 'Full-time graduate role starting in 2027. We do not offer visa sponsorship.', sponsorship: [] });
  const saved = await engine.upsertJob(incoming);
- assert.equal(saved.roleFamily, 'engineering');
+ assert.equal(saved.roleFamily, 'mechanical');
  assert.equal(saved.eligible, true);
  assert.deepEqual(eligibilityReasons(saved, NOW, (await store.read()).profile), []);
  const packet = await engine.prepare(saved.id);
@@ -718,4 +718,34 @@ test('no sponsorship requirement does not bypass citizenship, export control, cl
  assert.ok((await engine.snapshot()).jobs.every(job => job.eligible));
  await engine.updateProfile({ authorizationAtStart: false });
  assert.ok((await engine.snapshot()).jobs.every(job => !job.eligible));
+});
+
+
+test('career targets persist, re-evaluate experience and revoke approvals on target changes', async t => {
+ const {engine,store} = await fixture(t);
+ await assert.rejects(engine.updateSettings({careerStage:'experienced'}),/years of experience/i);
+ await engine.updateSettings({careerStage:'experienced',yearsExperience:5,rolePriority:['software'],careerTargetsConfirmed:true});
+ const {normalizeJob} = await import('../server/discovery.js');
+ await engine.upsertJob(normalizeJob({...job('experienced'),title:'Senior Software Engineer',description:'Full-time permanent position. Requires five years of software engineering experience.'}));
+ const saved = (await engine.snapshot()).jobs.find(j=>j.id==='experienced')!;
+ assert.equal(saved.eligible,true);
+ const packet = await engine.prepare(saved.id);
+ await engine.approve([packet.id]);
+ await engine.updateSettings({yearsExperience:2});
+ const changed = await engine.snapshot();
+ assert.equal(changed.settings.careerStage,'experienced');
+ assert.equal(changed.jobs.find(j=>j.id===saved.id)!.eligible,false);
+ assert.ok(changed.approvals.filter(a=>a.packetId===packet.id).every(a=>a.revokedAt));
+ assert.equal((await store.read()).settings.careerTargetsConfirmed,true);
+});
+test('explicit graduate targets prepare other cohorts and profile changes recheck the cohort', async t => {
+ const {engine} = await fixture(t);
+ await engine.updateProfile({graduation:'2028-06'});
+ await engine.updateSettings({careerStage:'new_grad',rolePriority:['software'],careerTargetsConfirmed:true});
+ const {normalizeJob} = await import('../server/discovery.js');
+ await engine.upsertJob(normalizeJob({...job('next-cohort'),title:'New Graduate Software Engineer 2028',description:'For graduates in 2028. Full-time permanent role starting August 2028.'}));
+ assert.equal((await engine.snapshot()).jobs.find(j=>j.id==='next-cohort')!.eligible,true);
+ await engine.prepare('next-cohort');
+ await engine.updateProfile({graduation:'2027-06'});
+ assert.equal((await engine.snapshot()).jobs.find(j=>j.id==='next-cohort')!.eligible,false);
 });

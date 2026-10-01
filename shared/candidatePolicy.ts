@@ -1,6 +1,8 @@
 import type { CandidateProfile, Job, Settings } from './types.js';
 
-export const roleFamilies = ['product', 'data', 'finance', 'consulting', 'software', 'engineering', 'other'] as const;
+export const roleFamilies = ['product', 'data', 'finance', 'consulting', 'software', 'engineering', 'mechanical', 'marketing', 'sales', 'design', 'operations', 'other'] as const;
+export const careerStageNames = { new_grad: 'New graduate', early_career: 'Early career (0–2 years)', experienced: 'Experienced' } as const;
+export const careerPathNames = { product:'Product', data:'Data & analytics', finance:'Finance', consulting:'Consulting', software:'Software engineering (SWE)', engineering:'Other engineering', mechanical:'Mechanical engineering', marketing:'Marketing', sales:'Sales & business development', design:'Design', operations:'Operations', other:'Other careers' } as const;
 export function sponsorshipNotRequired(profile?: CandidateProfile): boolean {
  return !!profile?.authorizationConfirmedAt && profile.authorizationAtStart === true && profile.futureSponsorship === false;
 }
@@ -18,6 +20,7 @@ export function candidateRestrictions(job: Job, profile?: CandidateProfile): str
 }
 export function matchesTargets(job: Job, settings: Settings): boolean {
  return settings.rolePriority.includes(job.roleFamily)
+  || (job.roleFamily === 'mechanical' && settings.rolePriority.includes('engineering'))
   || (settings.roleKeywords || []).some(term => job.title.toLowerCase().includes(term.toLowerCase()));
 }
 export function priorityRank(job: Job, settings: Settings): number {

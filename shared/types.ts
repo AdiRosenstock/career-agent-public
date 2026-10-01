@@ -1,4 +1,4 @@
-export type RoleFamily = 'product' | 'data' | 'finance' | 'consulting' | 'software' | 'engineering' | 'other';
+export type RoleFamily = 'product' | 'data' | 'finance' | 'consulting' | 'software' | 'engineering' | 'mechanical' | 'marketing' | 'sales' | 'design' | 'operations' | 'other';
 export type SponsorshipStatus = 'explicit_yes' | 'history_only' | 'unknown' | 'explicit_no';
 export type JobStatus = 'open' | 'closed' | 'unknown';
 export interface Fact { id: string; label: string; value: string; source: string; confirmed: boolean }
@@ -47,7 +47,8 @@ export interface SubmissionAttempt {
 export interface DailyRun { id: string; day: string; startedAt: string; finishedAt: string | null; status: 'running' | 'complete' | 'partial' | 'failed'; discovered: number; prepared: number; errors: string[] }
 export interface ManualPreparationAllowance { id: string; day: string; limit: number; reason: string; authorizedAt: string }
 export interface Board { id: string; company: string; source: 'greenhouse' | 'lever' | 'ashby'; token: string; enabled: boolean; sponsorship: SponsorshipEvidence[] }
-export interface Settings { dailyLimit: number; timezone: string; scheduleTime: string; rolePriority: RoleFamily[]; roleKeywords?: string[]; backend: 'sqlite' | 'supabase'; automationId: string | null; minimumAnnualCompensation?: number | null; compensationBasis?: 'base' | 'total' }
+export type CareerStage = 'new_grad' | 'early_career' | 'experienced';
+export interface Settings { careerStage?: CareerStage; yearsExperience?: number | null; careerTargetsConfirmed?: boolean; dailyLimit: number; timezone: string; scheduleTime: string; rolePriority: RoleFamily[]; roleKeywords?: string[]; backend: 'sqlite' | 'supabase'; automationId: string | null; minimumAnnualCompensation?: number | null; compensationBasis?: 'base' | 'total' }
 export interface PriorApplication {
  id: string; company: string; title: string; jobUrl: string | null; postingId: string | null;
  source: 'email' | 'linkedin' | 'handshake' | 'user'; sourceRef: string; evidence: string;

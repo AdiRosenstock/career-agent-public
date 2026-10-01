@@ -94,7 +94,7 @@ test('finance specialties and forward deployed roles enter the intended tracks',
   const forwardDeployed = job({ title: 'Forward Deployed Engineer — New Grad 2027' });
   assert.equal(forwardDeployed.roleFamily, 'software');
   assert.ok(forwardDeployed.fitReasons.some(reason => reason.includes('Forward Deployed')));
-  assert.equal(job({ title: 'Sales Development Representative — New Grad 2027' }).roleFamily, 'other');
+  assert.equal(job({ title: 'Sales Development Representative — New Grad 2027' }).roleFamily, 'sales');
 });
 
 test('a security-clearance requirement stays in research until eligibility is verified', () => {
@@ -194,10 +194,10 @@ test('Astera graduate operations roles need documented analytics work and retain
     assert.equal(job({ ...listing, sponsorship: [] }).eligible, false);
     assert.equal(job({ ...listing, description: `${listing.description} Requires five years of experience.` }).eligible, false);
   }
-  assert.equal(job({ ...sales, description: 'New College Graduate selling products and closing sales.' }).roleFamily, 'other');
+  assert.equal(job({ ...sales, description: 'New College Graduate selling products and closing sales.' }).roleFamily, 'sales');
   assert.equal(job({ ...capacity, description: 'New College Graduate operating manufacturing equipment.' }).roleFamily, 'other');
-  assert.equal(job({ ...sales, title: 'Sales Development Representative NCG' }).roleFamily, 'other');
-  assert.equal(job({ ...sales, company: 'Other Company' }).roleFamily, 'other');
+  assert.equal(job({ ...sales, title: 'Sales Development Representative NCG' }).roleFamily, 'sales');
+  assert.equal(job({ ...sales, company: 'Other Company' }).roleFamily, 'sales');
 });
 
 test('an internship-experience minimum supports a permanent junior role without admitting internships or intern managers', () => {
@@ -237,7 +237,7 @@ test('sponsorship history alone never qualifies managerial or unspecialized expe
     assert.equal(result.eligible, false, title);
     assert.ok(result.eligibilityReasons.some(reason => /entry-level|career tracks/.test(reason)), title);
   }
-  assert.equal(job({ title: 'Strategic Account Executive', description: 'Open to recent college graduates.' }).roleFamily, 'other');
+  assert.equal(job({ title: 'Strategic Account Executive', description: 'Open to recent college graduates.' }).roleFamily, 'sales');
   assert.equal(job({ title: 'Accounting Manager', description: 'No prior experience required.' }).eligible, false);
 });
 
@@ -444,4 +444,25 @@ test('finance acquisitions and generic economic consulting analyst titles retain
   assert.equal(job({ title: '2027 Analysts - US', description: 'Entry-level economic consulting. We cannot sponsor work visas.' }).eligible, false);
   assert.equal(job({ title: '2027 Analysts - US', description: 'Entry-level logistics operations.' }).roleFamily, 'other');
   assert.equal(job({ title: 'Full Time Analyst 2027', description: 'Entry-level venture capital investing program for 2027 graduates.' }).roleFamily, 'finance');
+});
+
+
+test('experienced targets compare required years without graduate cohort or senior-title exclusions', () => {
+ const role = job({title:'Senior Software Engineer',description:'Full-time permanent role. Requires five years of software engineering experience.'});
+ const matching = assessJob(role,{careerStage:'experienced',yearsExperience:5});
+ assert.equal(matching.eligible,true);
+ assert.equal(assessJob(role,{careerStage:'experienced',yearsExperience:2}).eligible,false);
+ assert.equal(assessJob(role,{careerStage:'experienced'}).eligible,false);
+ assert.equal(assessJob({...role,description:'Five years of software experience preferred.'},{careerStage:'experienced',yearsExperience:2}).eligible,true);
+ assert.equal(assessJob(role,{careerStage:'early_career'}).eligible,false);
+});
+test('explicit new-graduate targets use the saved graduation year and month', () => {
+ const role = job({title:'New Graduate Software Engineer 2028',description:'For graduates in 2028. Full-time permanent position starts August 2028.'});
+ assert.equal(assessJob(role,{careerStage:'new_grad',graduation:'2028-06'}).eligible,true);
+ assert.equal(assessJob(role,{careerStage:'new_grad',graduation:'2027-06'}).eligible,false);
+ assert.equal(assessJob(role,{careerStage:'new_grad'}).eligible,false);
+ assert.equal(assessJob({...role,description:'Graduating in 2028. Starts February 2028.'},{careerStage:'new_grad',graduation:'2028-06'}).eligible,false);
+});
+test('career classification separates mechanical, marketing, sales, design and operations', () => {
+ for(const [title,family] of [['Mechanical Engineer','mechanical'],['Marketing Analyst','marketing'],['Sales Development Representative','sales'],['Product Designer','design'],['Supply Chain Analyst','operations'],['Software Engineer','software']]) assert.equal(job({title}).roleFamily,family);
 });

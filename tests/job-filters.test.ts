@@ -1,12 +1,28 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { annualPay, matchesJobFilters, sponsorshipCategory } from '../shared/jobFilters';
+import { annualPay, jobDate, matchesJobFilters, matchesJobSearch, sponsorshipCategory } from '../shared/jobFilters';
 import type { AppSnapshot, Job, SponsorshipEvidence } from '../shared/types';
 const now = Date.parse('2026-10-01');
 const evidence = (changes: Partial<SponsorshipEvidence> = {}): SponsorshipEvidence => ({ id:'e', status:'explicit_yes', sourceUrl:'https://example.test/jobs/1', excerpt:'Sponsorship is available for this role.', checkedAt:'2026-09-30', employerName:'Example', scope:'role', entityMatch:true, ...changes });
 const job = (entries: SponsorshipEvidence[] = []): Job => ({ id:'j', company:'Example', location:'Chicago, IL', sponsorship:entries } as Job);
 const filters = { company:'all', location:'all', sponsorship:'all', pay:'all' };
 const state = {settings:{minimumAnnualCompensation:100000},meta:{salaryAssessments:{j:{min:110000,max:130000,currency:'USD',period:'year',basis:'base',status:'meets'}}}} as unknown as AppSnapshot;
+test('search combines terms across fields in any order and normalizes accents and spacing', () => {
+ const role = {...job(), company:'Société Example', title:'Investment Banking Analyst', roleFamily:'finance'} as Job;
+ for (const query of ['', '   ', 'Chicago analyst', 'ANALYST   societe', 'finance chicago']) assert.equal(matchesJobSearch(role,query),true);
+ for (const query of ['Chicago engineer', 'analyst remote']) assert.equal(matchesJobSearch(role,query),false);
+});
+test('search preserves phrases and excludes individual terms or phrases', () => {
+ const role = {...job(),title:'Investment Banking Analyst',roleFamily:'finance'} as Job;
+ for (const query of ['"investment banking" Chicago', '“investment banking” -senior', 'analyst -"New York"']) assert.equal(matchesJobSearch(role,query),true);
+ for (const query of ['"banking investment"','analyst -Chicago','-"investment banking"']) assert.equal(matchesJobSearch(role,query),false);
+ assert.equal(matchesJobSearch({...role,company:'Investment',title:'Banking Analyst'},'"investment banking"'),false);
+});
+test('newest sorting uses posting date before discovery date and handles missing dates', () => {
+ assert.equal(jobDate({...job(),postedAt:'2026-09-01',fetchedAt:'2026-10-01'}),Date.parse('2026-09-01'));
+ assert.equal(jobDate({...job(),postedAt:null,fetchedAt:'2026-10-01'}),Date.parse('2026-10-01'));
+ assert.equal(jobDate({...job(),postedAt:null,fetchedAt:''}),0);
+});
 test('sponsorship filters distinguish role support from employer history', () => {
  assert.equal(sponsorshipCategory(job([evidence()]), now),'explicit_yes');
  assert.equal(sponsorshipCategory(job([evidence({status:'history_only',scope:'employer'})]),now),'history_only');

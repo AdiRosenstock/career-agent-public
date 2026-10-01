@@ -39,3 +39,15 @@ Company and location options come from the saved job list. Sponsorship filters d
 Compensation filters use the saved assessment and the user's selected minimum and base/total basis. Annual USD range sorting uses each range's minimum, places unknown/hourly/non-USD values last, and preserves basis labels; it does not equate base and total compensation. The pay-floor shortcut is disabled until a positive minimum is saved.
 
 Quick views select role sponsors, employer history, pay-floor matches, or research. All-status view allows browsing excluded or previously applied jobs without making them eligible. Search, company, location, sponsorship, pay, sort, track and status persist in the URL. Reset clears narrowing filters while retaining the status view. These controls filter saved records locally and never connect accounts, start agent work or authorize submissions.
+
+## Opportunity search
+
+Saved applications and Opportunities use the same search rules: terms can appear in any order across company, title, location and career track. Search ignores case, repeated whitespace and accents. Quotes require a phrase within one field; a leading minus excludes a term or quoted phrase. Search does not inspect job descriptions.
+
+Opportunities now offers company, location, sponsorship and compensation filters, plus career priority/fit, company, annual USD minimum and newest-posting sorting. Newest uses the posting date when supplied and discovery date otherwise. Opportunity controls persist in separate `op-` URL parameters, keeping them independent from saved-application filters. Reset clears narrowing filters while keeping the current status tab and sort choice. Result counts and a reset action help recover from an empty search.
+
+## Career targets
+
+The dashboard asks users to confirm their experience level and career paths in Settings. Users can select new graduate, early career (0–2 years), or experienced and enter professional experience for the latter. Career paths include software, mechanical and other engineering, finance, marketing, sales, design, operations, product, data, consulting and custom title terms. Targets stay in private settings; existing workspaces keep their legacy policy until users explicitly select a level.
+
+Discovery respects the chosen paths. Experienced matching compares required years with the saved experience and does not impose graduate cohort or senior-title exclusions. New-graduate matching checks the graduation month saved in Profile. Changing career policy re-evaluates saved jobs and revokes pending approvals. Selecting a level does not establish degree qualifications, work authorization, or sponsorship.

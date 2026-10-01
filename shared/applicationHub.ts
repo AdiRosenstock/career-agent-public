@@ -15,7 +15,7 @@ export function applicationGroup(job: Job, state: AppSnapshot): 'active' | 'rese
  const pay = (state.meta as AppSnapshot['meta'] & { salaryAssessments?: Record<string, {status: string}> }).salaryAssessments?.[job.id]?.status;
  if ((state.settings.minimumAnnualCompensation || 0) > 0 && pay === 'below') return 'archived';
  const payVerified = !(state.settings.minimumAnnualCompensation || 0) || pay === 'meets';
- return job.eligible && job.status === 'open' && /2027/.test(job.title + ' ' + job.description) && payVerified ? 'active' : 'research';
+ return job.eligible && job.status === 'open' && (state.settings.careerStage !== undefined || /2027/.test(job.title + ' ' + job.description)) && payVerified ? 'active' : 'research';
 }
 export function helperProfile(profile: CandidateProfile) {
  const answer = (...questions: string[]) => profile.savedAnswers.find(a => a.confirmedAt && questions.includes(a.question))?.answer || '';

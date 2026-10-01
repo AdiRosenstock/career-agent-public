@@ -1,4 +1,4 @@
-import { priorityRank, sponsorshipNotRequired } from '../shared/candidatePolicy';
+import { careerPathNames, priorityRank, sponsorshipNotRequired } from '../shared/candidatePolicy';
 import { useEffect, useState } from "react";
 import {
   Copy,
@@ -8,11 +8,10 @@ import {
   FileText,
   ArrowLeft,
 } from "lucide-react";
-import { annualPay, matchesJobFilters, sponsorshipCategory } from "../shared/jobFilters";
+import { annualPay, matchesJobFilters, matchesJobSearch, jobDate, sponsorshipCategory } from "../shared/jobFilters";
 import type { AppSnapshot, Job } from "../shared/types";
 import {
   applicationGroup,
-  financeRole,
   helperProfile,
 } from "../shared/applicationHub";
 
@@ -100,16 +99,14 @@ export default function ApplicationHub({
     .filter(
       (j) =>
         family === "all" ||
-        (family === "finance" ? financeRole(j) : j.roleFamily === family),
+        j.roleFamily === family,
     )
-    .sort((a, b) => sort === "company" ? a.company.localeCompare(b.company) : sort === "pay" ? annualPay(b, state) - annualPay(a, state) : priorityRank(a, state.settings) - priorityRank(b, state.settings) || b.score - a.score);
+    .sort((a, b) => sort === "newest" ? jobDate(b) - jobDate(a) : sort === "company" ? a.company.localeCompare(b.company) : sort === "pay" ? annualPay(b, state) - annualPay(a, state) : priorityRank(a, state.settings) - priorityRank(b, state.settings) || b.score - a.score);
   const visible = jobs.filter(
     (j) =>
       (filter === "all" || applicationGroup(j, state) === filter) &&
       matchesJobFilters(j, state, { company, location: place, sponsorship, pay }) &&
-      `${j.company} ${j.title} ${j.location}`
-        .toLowerCase()
-        .includes(search.toLowerCase()),
+      matchesJobSearch(j, search),
   );
   const profile = helperProfile(state.profile);
   const reusableAnswers = [
@@ -212,7 +209,7 @@ export default function ApplicationHub({
                   {label}
                   <span>
                     {
-                      jobs.filter((j) => (id === "all" || applicationGroup(j, state) === id) && matchesJobFilters(j, state, {company, location:place, sponsorship,pay}) && `${j.company} ${j.title} ${j.location}`.toLowerCase().includes(search.toLowerCase()))
+                      jobs.filter((j) => (id === "all" || applicationGroup(j, state) === id) && matchesJobFilters(j, state, {company, location:place, sponsorship,pay}) && matchesJobSearch(j, search))
                         .length
                     }
                   </span>
@@ -226,6 +223,7 @@ export default function ApplicationHub({
                   className="hub-search"
                   aria-label="Search applications"
                   placeholder="Search company, role, or location…"
+                  title='Combine terms in any order. Use "exact phrase" or -term to exclude.'
                   name="application-search"
                   autoComplete="off"
                   value={search}
@@ -238,23 +236,19 @@ export default function ApplicationHub({
                 onChange={(e) => setFamily(e.target.value)}
               >
                 <option value="all">All career tracks</option>
-                <option value="product">Product</option>
-                <option value="data">Data</option>
-                <option value="software">Software</option><option value="engineering">Engineering</option>
-                <option value="finance">Finance & consulting</option>
-                <option value="consulting">Consulting</option>
-                <option value="other">Other</option>
+                {Object.entries(careerPathNames).map(([value,label]) => <option key={value} value={value}>{label}</option>)}
               </select>
               <span className="small-note" role="status">
                 {visible.length} shown
               </span>
             </div>
+            <p className="search-guidance">Search terms can appear in any order. Use “exact phrase” or -term to exclude.</p>
             <div className="advanced-job-filters" aria-label="Application filters">
               <label>Company<select aria-label="Company filter" value={company} onChange={e => setCompany(e.target.value)}><option value="all">All companies</option>{companies.map(c => <option key={c}>{c}</option>)}</select></label>
               <label>Sponsorship<select aria-label="Sponsorship filter" value={sponsorship} onChange={e => setSponsorship(e.target.value)}><option value="all">All evidence</option><option value="explicit_yes">Role sponsorship confirmed</option><option value="history_only">Employer history only</option><option value="unknown">Needs research</option><option value="explicit_no">Explicitly unavailable</option></select></label>
               <label>Compensation<select aria-label="Compensation filter" value={pay} onChange={e => setPay(e.target.value)}><option value="all">All pay evidence</option><option value="verified">Annual USD range available</option><option value="meets">Meets my saved minimum</option><option value="overlap">Range crosses minimum</option><option value="below">Below minimum</option><option value="unknown">Needs research</option></select></label>
               <label>Location<select aria-label="Location filter" value={place} onChange={e => setPlace(e.target.value)}><option value="all">All locations</option>{locations.map(c => <option key={c}>{c}</option>)}</select></label>
-              <label>Sort by<select aria-label="Sort applications" value={sort} onChange={e => setSort(e.target.value)}><option value="fit">Best match</option><option value="company">Company name</option><option value="pay">Highest annual range minimum</option></select></label>
+              <label>Sort by<select aria-label="Sort applications" value={sort} onChange={e => setSort(e.target.value)}><option value="fit">Best match</option><option value="company">Company name</option><option value="newest">Newest postings</option><option value="pay">Highest annual range minimum</option></select></label>
               <button className="button secondary" onClick={resetFilters}>Reset filters</button>
             </div>
             <div className="filter-presets" aria-label="Quick filters"><span>Quick views</span><button onClick={() => { resetFilters(); setFilter('all'); setSponsorship('explicit_yes'); }}>Role sponsors</button><button onClick={() => { resetFilters(); setFilter('all'); setSponsorship('history_only'); }}>Sponsor history</button><button disabled={!((state.settings.minimumAnnualCompensation ?? 0) > 0)} title="Uses the minimum and base/total basis saved in Settings" onClick={() => { resetFilters(); setFilter('all'); setPay('meets'); }}>Meets my pay floor</button><button onClick={() => { resetFilters(); setFilter('research'); }}>Needs research</button><details className="filter-evidence-note"><summary>How these filters work</summary><p>Employer history is not a role-level guarantee. Filters use saved evidence; ask your agent to verify missing facts. Pay sorting uses annual USD minimums; base and total remain labelled separately.</p></details></div>

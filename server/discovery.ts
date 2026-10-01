@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import type { Board, FormQuestion, Job, RoleFamily, SponsorshipEvidence, SponsorshipStatus } from '../shared/types.js';
+import type { Board, FormQuestion, Job, Settings, RoleFamily, SponsorshipEvidence, SponsorshipStatus } from '../shared/types.js';
 import { compensationEligibilityReasons } from './compensation.js';
 
 type Row = Record<string, unknown>;
@@ -157,6 +157,11 @@ export function sponsorshipStatus(job: Job, now = Date.now()): SponsorshipStatus
 
 export function roleFamily(title: string): RoleFamily {
   if (/\b(?:sales\s*(?:&|and)\s*trading|wealth\s+management|asset\s+management|private\s+bank|real estate acquisitions)\b/i.test(title)) return 'finance';
+  if (/\b(?:marketing|marketer|seo|content strategist|brand manager|growth manager|social media)\b/i.test(title)) return 'marketing';
+  if (/\b(?:mechanical|mechatronics|thermal|propulsion)\b/i.test(title) && !/\b(?:software|swe|developer)\b/i.test(title)) return 'mechanical';
+  if (/\b(?:ux|ui|product designer|graphic design|visual design|design researcher)\b/i.test(title)) return 'design';
+  if (/\b(?:operations|supply chain|logistics|procurement)\b/i.test(title)) return 'operations';
+  if (/\b(?:account executive|sales|business development)\b/i.test(title)) return 'sales';
   if (/\b(?:account\s+executive|account\s+manager|sales|business\s+development|recruiter|talent\s+acquisition)\b/i.test(title)) return 'other';
   if (/\b(?:product\s+(?:manager|management|analyst)|apm)\b/i.test(title)) return 'product';
   if (/\b(?:data|analytics|business intelligence|machine learning|statistical|bi analyst)\b/i.test(title)) return 'data';
@@ -185,7 +190,7 @@ function advancedDegreeRequired(title: string, description: string): boolean {
       || /\b(?:phd|doctorate|doctoral|master'?s?)\b[^]*\b(?:required|requirement|mandatory)\b/i.test(clause)));
 }
 
-function dateCompatibility(text: string): { conflict: boolean; juneStart: boolean } {
+function dateCompatibility(text: string, year = 2027, graduationMonth = 6): { conflict: boolean; juneStart: boolean } {
   const months = '(January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)';
   const monthIndex: Record<string, number> = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12 };
   let conflict = false;
@@ -194,14 +199,14 @@ function dateCompatibility(text: string): { conflict: boolean; juneStart: boolea
     const graduation = /\bgraduat\w*\b/i.test(clause);
     const employmentStart = !/\b(?:applications?|recruiting|recruitment|interviews?)\b/i.test(clause) && /\b(?:start(?:s|ing)?|commenc\w*|join(?:s|ing)?)\b/i.test(clause);
     if (!graduation && !employmentStart) continue;
-    const dates = [...clause.matchAll(new RegExp(`\\b${months}\\s+(?:\\d{1,2}(?:st|nd|rd|th)?[, ]+)?2027\\b`, 'gi'))];
+    const dates = [...clause.matchAll(new RegExp(`\\b${months}\\s+(?:\\d{1,2}(?:st|nd|rd|th)?[, ]+)?${year}\\b`, 'gi'))];
     if (!dates.length) continue;
     const values = dates.map(match => monthIndex[match[1].slice(0, 3).toLowerCase()]);
     const range = dates.length >= 2 && /\b(?:between|through|to|and)\b|[-–]/i.test(clause);
-    if (range && Math.min(...values) <= 6 && Math.max(...values) >= 6) continue;
-    if (values.every(month => month < 6)) conflict = true;
-    if (graduation && values.includes(6) && /\b(?:prior to|before)\s+June/i.test(clause)) conflict = true;
-    if (employmentStart && values.includes(6)) juneStart = true;
+    if (range && Math.min(...values) <= graduationMonth && Math.max(...values) >= graduationMonth) continue;
+    if (values.every(month => month < graduationMonth)) conflict = true;
+    if (graduation && values.includes(graduationMonth) && /\b(?:prior to|before)\s+/i.test(clause)) conflict = true;
+    if (employmentStart && values.includes(graduationMonth)) juneStart = true;
   }
   return { conflict, juneStart };
 }
@@ -227,7 +232,7 @@ function experienceRequirements(description: string): { minimum: number; preferr
 }
 
 function earlyCareerEvidence(title: string, description: string, experience: ReturnType<typeof experienceRequirements>): { title: boolean; description: boolean; excluded: boolean } {
-  const titleSignal = /\b(?:new[ -]?(?:college[ -]+)?grad\w*|recent[ -]?grad\w*|university grad\w*|graduate|entry[ -]level|early[ -]career|associate|junior|apm)\b|\b(?:analyst|engineer|scientist|consultant)\s+(?:i|1)\b|\bfull[ -]?time analyst\b[^]*\b2027\b|\b2027\b[^]*\bfull[ -]?time analyst\b/i.test(title);
+  const titleSignal = /\b(?:new[ -]?(?:college[ -]+)?grad\w*|recent[ -]?grad\w*|university grad\w*|graduate|entry[ -]level|early[ -]career|associate|junior|apm)\b|\b(?:analyst|engineer|scientist|consultant)\s+(?:i|1)\b|\bfull[ -]?time analyst\b[^]*\b20\d{2}\b|\b20\d{2}\b[^]*\bfull[ -]?time analyst\b/i.test(title);
   const clauses = description.split(/[.!?\n;]/);
   const earlyWords = /\b(?:(?:new|recent|college|university)[ -]+grad\w*|entry[ -]level|early[ -]career)\b/i;
   const excluded = clauses.some(clause => earlyWords.test(clause) && /\b(?:not intended|not suitable|not open|not eligible|not for|do not consider|do not accept|exclude[sd]?)\b/i.test(clause));
@@ -236,8 +241,8 @@ function earlyCareerEvidence(title: string, description: string, experience: Ret
     return earlyWords.test(clause)
       || /\bno\s+(?:(?:prior|previous|professional|work|industry|full.time)\s+)*experience\s+(?:is\s+)?(?:required|necessary|needed)\b/i.test(clause)
       || /\b(?:you\s+must\s+have|candidates?\s+must\s+have|requires?)\s+(?:at\s+least\s+)?internship\s+experience\b/i.test(clause)
-      || /\b(?:2027\s+graduates?|graduates?\s+(?:in\s+)?2027)\b/i.test(clause)
-      || /\b(?:you\s+(?:will|must|should)\s+graduate|graduating\s+(?:in|between|by)|expected\s+graduation|graduation\s+date)\b[^]{0,120}\b2027\b/i.test(clause);
+      || /\b(?:20\d{2}\s+graduates?|graduates?\s+(?:in\s+)?20\d{2})\b/i.test(clause)
+      || /\b(?:you\s+(?:will|must|should)\s+graduate|graduating\s+(?:in|between|by)|expected\s+graduation|graduation\s+date)\b[^]{0,120}\b20\d{2}\b/i.test(clause);
   });
   return { title: titleSignal, description: descriptionSignal || experience.some(requirement => !requirement.preferred && requirement.minimum <= 2), excluded };
 }
@@ -262,7 +267,7 @@ export function isNonPermanentJob(job: Pick<Job, 'title' | 'description'>): bool
   return false;
 }
 
-export interface JobAssessmentPolicy { minimumAnnualCompensation?: number | null; compensationBasis?: 'base' | 'total' }
+export interface JobAssessmentPolicy extends Pick<Settings, 'minimumAnnualCompensation' | 'compensationBasis' | 'careerStage' | 'yearsExperience'> { graduation?: string }
 
 export function isGraduateSoftwareStaffRole(job: Pick<Job, 'title' | 'description'>): boolean {
   return /\bMember of Technical Staff\b[^]*\bNew Grad(?:uate)?\b/i.test(job.title)
@@ -298,7 +303,7 @@ export function assessJob(input: Job, policy: JobAssessmentPolicy = {}): Job {
       && /\bbusiness systems\b/i.test(input.description) && /\b(?:reports|reporting|dashboards)\b/i.test(input.description))
       || (/^Capacity Planning NCG$/i.test(input.title.trim())
         && /\bcapacity forecasts\b/i.test(input.description) && /\b(?:Python|SQL)\b/i.test(input.description)));
-  if (job.roleFamily === 'other' && asteraOperations) job.roleFamily = 'data';
+  if (['other','sales','operations'].includes(job.roleFamily) && asteraOperations) job.roleFamily = 'data';
   // Sierra's APX title omits the product/engineering tracks named in its program description.
   const sierraApx = /^Sierra(?: Technologies)?(?:,? Inc\.?)?$/i.test(input.company.trim())
     && /^APX\b[^]*\bNew Grad(?:uate)?\b/i.test(input.title)
@@ -309,49 +314,61 @@ export function assessJob(input: Job, policy: JobAssessmentPolicy = {}): Job {
     job.fitReasons.push('Sierra APX combines Agent Development and Core Product rotations');
   }
   const block = (reason: string) => job.eligibilityReasons.push(reason);
-  let score = ({ product: 40, data: 38, finance: 35, consulting: 30, software: 27, engineering: 27, other: 0 })[job.roleFamily];
+  let score = ({ product: 40, data: 38, finance: 35, consulting: 30, software: 27, engineering: 27, mechanical: 27, marketing: 30, sales: 30, design: 30, operations: 30, other: 0 })[job.roleFamily];
   if (job.roleFamily !== 'other') job.fitReasons.push(`${job.roleFamily} role matches a target career track`);
   else block('Role is outside the selected career tracks');
   if (job.status !== 'open') block(job.status === 'closed' ? 'Posting is closed' : 'Posting availability needs verification');
   if (!usLocation(job.location)) block('United States location not confirmed');
   else { score += 15; job.fitReasons.push('United States location listed'); }
+  const stage = policy.careerStage || 'new_grad';
+  const experienced = stage === 'experienced';
+  const graduation = policy.graduation || (policy.careerStage ? '' : '2027-06');
+  const targetYear = Number(graduation.slice(0,4));
+  const targetMonth = Number(graduation.slice(5,7));
   const seniorityTitle = graduateSoftwareStaff ? job.title.replace(/\bMember of Technical Staff\b/i, '') : job.title;
-  if (/\b(?:senior|sr\.?|staff|principal|director|head|vp|vice president|lead)\b|\b(?:engineer|scientist|manager)\s+(?:ii|iii|iv)\b/i.test(seniorityTitle)) block('Title indicates a senior role');
-  if (/\bmanager\b/i.test(job.title) && job.roleFamily !== 'product') block('Management role is outside the graduate/entry-level target');
+  if (!experienced && /\b(?:senior|sr\.?|staff|principal|director|head|vp|vice president|lead)\b|\b(?:engineer|scientist|manager)\s+(?:ii|iii|iv)\b/i.test(seniorityTitle)) block('Title indicates a senior role');
+  if (!experienced && /\bmanager\b/i.test(job.title) && job.roleFamily !== 'product') block('Management role is outside the graduate/entry-level target');
   if (/\b(?:active\s+(?:U\.?S\.?\s+)?security\s+clearance|eligibility\s+and\s+willingness\s+to\s+obtain\s+(?:a\s+)?(?:U\.?S\.?\s+)?security\s+clearance|must\s+be\s+eligible\s+to\s+obtain\s+(?:a\s+)?(?:U\.?S\.?\s+)?security\s+clearance)\b/i.test(job.description)) block('Security-clearance eligibility needs verification');
-  if (advancedDegreeRequired(job.title, job.description)) block('Requires a graduate degree beyond the current BA profile');
+  if (advancedDegreeRequired(job.title, job.description)) block(policy.careerStage ? 'Required advanced degree needs profile verification' : 'Requires a graduate degree beyond the current BA profile');
   if (isNonPermanentJob(job)) block('Not a full-time permanent position');
   const text = `${job.title}\n${job.description}`;
   const experience = experienceRequirements(job.description);
-  if (experience.some(requirement => requirement.minimum >= 3 && !requirement.preferred)) block('Requires at least three years of experience');
+  if (!experienced && experience.some(requirement => requirement.minimum >= 3 && !requirement.preferred)) block('Requires at least three years of experience');
+  if (experienced && policy.yearsExperience == null) block('Career target: confirm years of professional experience');
+  if (experienced && policy.yearsExperience != null && experience.some(requirement => !requirement.preferred && requirement.minimum > policy.yearsExperience!)) block('Career target: required experience exceeds your saved years of experience');
   const earlyCareer = earlyCareerEvidence(job.title, job.description, experience);
-  if (earlyCareer.excluded) block('Posting explicitly excludes graduate or entry-level applicants');
-  if (!earlyCareer.title && !earlyCareer.description) block('Graduate/entry-level suitability is not established by the posting');
-  const cycleClauses = text.split(/[\n.!?]/).filter(clause => {
-    if (!/\b(?:graduat\w*|class of|start(?:ing)?\s+(?:date|in|by)|commenc\w*)\b/i.test(clause)) return false;
-    // Company accolades can be a "Class of 2026"; only a candidate class is
-    // relevant to graduation compatibility.
-    if (/\bclass of\b/i.test(clause) && !/\b(?:you|candidate|applicant|student|graduat\w*|cohort|new[ -]?grad)\b/i.test(clause) && !/\bclass of\b/i.test(job.title)) return false;
-    return true;
-  });
-  const incompatibleCycle = cycleClauses.some((clause, index) => {
-    const values = [...clause.matchAll(/\b20(\d{2})\b/g)].map(m => Number(m[0]));
-    if (values.length === 0 || values.includes(2027)) return false;
-    // Some graduate postings offer a separate, older recent-graduate cohort
-    // after an explicitly compatible student cohort. An OR alternative is not
-    // an additional requirement; unrelated start-date restrictions still apply.
-    if (/^\s*\*?\s*or\b/i.test(clause) && /\bgraduat\w*\b/i.test(clause)
-      && !/\b(?:start|commenc)\w*\b/i.test(clause)
-      && /\b2027\b/.test(cycleClauses[index - 1] || '')) return false;
-    if (values.length >= 2 && Math.min(...values) <= 2027 && Math.max(...values) >= 2027) return false;
-    return values.some(year => year >= 2024 && year <= 2035);
-  });
-  if (incompatibleCycle) block('Explicit graduation or start cycle does not include 2027');
-  const timing = dateCompatibility(text);
-  if (timing.conflict) block('Explicit graduation or start date is before expected June 2027 graduation');
-  if (timing.juneStart) job.concerns.push('June 2027 start requires checking the exact graduation and work-authorization dates');
-  if (/\b2027\b/.test(text)) { score += 20; job.fitReasons.push('Posting mentions the 2027 cycle; inspect exact start requirements'); }
-  else job.concerns.push('2027 start date is not explicit; verify before approval');
+  if (!experienced && earlyCareer.excluded) block('Posting explicitly excludes graduate or entry-level applicants');
+  if (!experienced && !earlyCareer.title && !earlyCareer.description) block('Graduate/entry-level suitability is not established by the posting');
+  if (stage === 'new_grad') {
+    if (!/^20\d{2}-(0[1-9]|1[0-2])$/.test(graduation)) block('Career target: confirm your graduation month in Profile');
+    else {
+      const cycleClauses = text.split(/[\n.!?]/).filter(clause => {
+        if (!/\b(?:graduat\w*|class of|start(?:ing)?\s+(?:date|in|by)|commenc\w*)\b/i.test(clause)) return false;
+        // Company accolades can be a "Class of 2026"; only a candidate class is
+        // relevant to graduation compatibility.
+        if (/\bclass of\b/i.test(clause) && !/\b(?:you|candidate|applicant|student|graduat\w*|cohort|new[ -]?grad)\b/i.test(clause) && !/\bclass of\b/i.test(job.title)) return false;
+        return true;
+      });
+      const incompatibleCycle = cycleClauses.some((clause, index) => {
+        const values = [...clause.matchAll(/\b20(\d{2})\b/g)].map(m => Number(m[0]));
+        if (values.length === 0 || values.includes(targetYear)) return false;
+        // Some graduate postings offer a separate, older recent-graduate cohort
+        // after an explicitly compatible student cohort. An OR alternative is not
+        // an additional requirement; unrelated start-date restrictions still apply.
+        if (/^\s*\*?\s*or\b/i.test(clause) && /\bgraduat\w*\b/i.test(clause)
+          && !/\b(?:start|commenc)\w*\b/i.test(clause)
+          && cycleClauses[index - 1]?.includes(String(targetYear))) return false;
+        if (values.length >= 2 && Math.min(...values) <= targetYear && Math.max(...values) >= targetYear) return false;
+        return values.some(year => year >= 2024 && year <= 2035);
+      });
+      if (incompatibleCycle) block(`Explicit graduation or start cycle does not include ${targetYear}`);
+      const timing = dateCompatibility(text, targetYear, targetMonth);
+      if (timing.conflict) block(policy.careerStage ? `Career target: posting dates conflict with your ${graduation} graduation` : 'Explicit graduation or start date is before expected June 2027 graduation');
+      if (timing.juneStart) job.concerns.push('Start month requires checking the exact graduation and work-authorization dates');
+      if (targetYear && text.includes(String(targetYear))) { score += 20; job.fitReasons.push(`Posting mentions the ${targetYear} cycle; inspect exact start requirements`); }
+      else job.concerns.push(`${targetYear || 'Graduation'} start date is not explicit; verify before approval`);
+    }
+  }
   if (earlyCareer.title) { score += 10; job.fitReasons.push('Title signals an early-career opportunity'); }
   else if (earlyCareer.description && !earlyCareer.excluded) { score += 8; job.fitReasons.push('Description explicitly supports graduate or 0–2 years experience candidates'); }
   if (/\bforward\s+deployed\b/i.test(job.title) && job.roleFamily === 'software') { score += 8; job.fitReasons.push('Forward Deployed Engineer software role'); }

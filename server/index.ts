@@ -76,7 +76,7 @@ app.post('/api/profile',route(async(req,res)=>{
  res.json(await rt.engine.updateProfile(input));
 }));
 app.post('/api/settings',route(async(req,res)=>{
- const input=z.object({rolePriority:z.array(z.enum(roleFamilies)).max(7).optional(),roleKeywords:z.array(z.string().trim().min(1).max(100)).max(30).optional(),dailyLimit:z.number().int().min(1).max(20).optional(),minimumAnnualCompensation:z.number().int().min(0).max(10000000).nullable().optional(),compensationBasis:z.enum(['base','total']).optional()}).strict().parse(req.body);res.json(await rt.engine.updateSettings(input));
+ const input=z.object({careerStage:z.enum(['new_grad','early_career','experienced']).optional(),yearsExperience:z.number().min(0).max(60).nullable().optional(),careerTargetsConfirmed:z.boolean().optional(),rolePriority:z.array(z.enum(roleFamilies)).max(roleFamilies.length).optional(),roleKeywords:z.array(z.string().trim().min(1).max(100)).max(30).optional(),dailyLimit:z.number().int().min(1).max(20).optional(),minimumAnnualCompensation:z.number().int().min(0).max(10000000).nullable().optional(),compensationBasis:z.enum(['base','total']).optional()}).strict().parse(req.body);res.json(await rt.engine.updateSettings(input));
 }));
 app.post('/api/boards',route(async(req,res)=>{
  const data=z.object({id:z.string().optional(),company:z.string().min(1).max(300),source:z.enum(['greenhouse','lever','ashby']),token:z.string().min(1).max(200),enabled:z.boolean().optional(),sponsorship:z.array(z.object({id:z.string(),status:z.enum(['explicit_yes','history_only','unknown','explicit_no']),sourceUrl:z.url(),excerpt:z.string().min(1).max(10000),checkedAt:z.string(),employerName:z.string(),scope:z.enum(['role','employer']),entityMatch:z.boolean()})).optional()}).parse(req.body);
