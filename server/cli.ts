@@ -7,6 +7,7 @@ import { validateAppState } from './store.js';
 import type { AppState, Job, PacketDraft } from '../shared/types.js';
 import { registerDocument, verifiedDocumentBytes } from './documents.js';
 import { registerResume, verifiedResumeBytes } from './resume.js';
+import { agentWork } from './agent-context.js';
 
 const args=process.argv.slice(2);
 const command=args[0]||'help';
@@ -16,7 +17,10 @@ function need(value:string|undefined,label:string):string{if(!value)throw new Er
 const help=`Career Agent — shared agent workflow CLI
 Run from the project folder: npm run agent -- COMMAND
 
-state                         Full profile, jobs, packets, evidence, run status
+work [--limit N] [--offset N] [--batch ID]  Compact next actions, gaps, quota and IDs
+profile                       Exact saved profile, facts and reusable answers
+job ID                        One exact sourced job; no unrelated job history
+state                         Full workspace (diagnostics/backup; prefer work)
 jobs                          Compact job list
 packet ID                     Exact packet with its job and profile facts
 import-job --file FILE        {url, company?, title?, location?, description?}
@@ -55,6 +59,9 @@ const rt=await openRuntime();
 try {
  let result:unknown;
  switch(command){
+  case 'work':result=agentWork(await rt.engine.snapshot(),{limit:flag('limit')===undefined?undefined:Number(flag('limit')),offset:flag('offset')===undefined?undefined:Number(flag('offset')),batchId:flag('batch'),dashboardUrl:`http://127.0.0.1:${process.env.PORT||4317}`});break;
+  case 'profile':result=(await rt.store.read()).profile;break;
+  case 'job':{const job=(await rt.engine.snapshot()).jobs.find(j=>j.id===args[1]);if(!job)throw new Error('Job not found.');result=job;break;}
   case 'state':result=await rt.engine.snapshot();break;
   case 'jobs':result=(await rt.store.read()).jobs.map(({id,company,title,location,score,eligible,eligibilityReasons,concerns,sponsorship,status})=>({id,company,title,location,score,eligible,eligibilityReasons,concerns,sponsorship,status}));break;
   case 'packet':{const state=await rt.store.read();const packet=state.packets.find(p=>p.id===args[1]);if(!packet)throw new Error('Packet not found.');result={packet,job:state.jobs.find(j=>j.id===packet.jobId),profile:state.profile};break;}

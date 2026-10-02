@@ -157,25 +157,63 @@ test('a saved answer is not inserted into a form whose options exclude it', asyn
 
 test('confirmed profile answers fill only unambiguous authorization, sponsorship, relocation and location questions', async t => {
  const { engine } = await fixture(t);
- const profile = (await engine.snapshot()).profile;
  await engine.updateProfile({ authorizationNow: true, authorizationAtStart: true, futureSponsorship: true, authorizationConfirmedAt: iso,
-  facts: [...profile.facts, { id: 'user-onsite-20260928', label: 'Onsite preference', value: 'Willing to work onsite', source: 'user:confirmed', confirmed: true }, { id: 'user-relocation-20260928', label: 'Relocation preference', value: 'Willing to relocate', source: 'user:confirmed', confirmed: true }],
-  savedAnswers: [{ id: 'city', question: 'Location (City)', answer: 'Exampleville, Illinois', confirmedAt: iso }, { id: 'dial', question: 'Country (phone dialing code)', answer: '+1', confirmedAt: iso }] });
+  savedAnswers: [{ id: 'city', question: 'Location (City)', answer: 'Exampleville, Illinois', confirmedAt: iso }, { id: 'dial', question: 'Country (phone dialing code)', answer: '+1', confirmedAt: iso }, { id: 'relocate', question: 'Are you open to relocation?', answer: 'Yes', confirmedAt: iso }, { id: 'onsite', question: 'Are you willing to work on site?', answer: 'Yes', confirmedAt: iso }] });
  const labels = [
   'Are you legally authorized to work in the United States?',
   'Will you now or in the future require sponsorship for employment visa status (e.g., H-1B visa status)?',
-  'Are you open to relocation to Santa Monica, CA?',
-  'Are you willing to work four days per week in our San Francisco office?',
+  'Are you willing to relocate?',
+  'Are you willing to work onsite?',
   'Phone country code', 'City', 'Year of Graduation',
   'Are you currently authorized to work for all employers in the United States on a full-time basis?',
   'Are you authorized to work lawfully in the US, without employer support?',
   'Will you now require immigration sponsorship by our company?',
   'Are you excited to work in-office five days a week?',
+  'Are you open to relocation to Santa Monica, CA?',
+  'Are you willing to work four days per week in our San Francisco office?',
  ];
  await engine.upsertJob(job('reuse', { questions: labels.map((label, i) => ({ id: `q${i}`, label, required: true, type: 'text', options: i < 4 ? ['Yes', 'No'] : undefined })) }));
  const packet = await engine.prepare('reuse');
  assert.deepEqual(packet.answers.map(a => a.answer), ['Yes', 'Yes', 'Yes', 'Yes', '+1', 'Exampleville', '2027']);
- assert.equal(packet.unresolved.filter(x => x.startsWith('Required answer missing')).length, 4);
+ assert.equal(packet.unresolved.filter(x => x.startsWith('Required answer missing')).length, 6);
+});
+
+test('confirmed negative authorization and sponsorship map to exact employer options without answering added conditions', async t => {
+ const { engine } = await fixture(t);
+ await engine.updateProfile({ authorizationNow: false, authorizationAtStart: true, futureSponsorship: false, authorizationConfirmedAt: iso });
+ const labels = [
+  'Are you authorized to work in the United States?',
+  'Do you require visa sponsorship now or in the future?',
+  'Will you now or in the future require sponsorship for employment visa status (e.g., H-1B visa status)?',
+  'Are you authorized to work in the United States without employer support?',
+  'Are you authorized to work in the United States on January 1, 2027?',
+  'Will you require visa sponsorship now?',
+  'Do you certify that you will not require sponsorship now or in the future?',
+ ];
+ await engine.upsertJob(job('negative-auth', { questions: labels.map((label, i) => ({ id: `q${i}`, label, required: true, type: 'select', options: ['YES', 'NO'] })) }));
+ const packet = await engine.prepare('negative-auth');
+ assert.deepEqual(packet.answers.map(answer => answer.answer), ['NO', 'NO', 'NO']);
+ assert.equal(packet.unresolved.filter(item => item.startsWith('Required answer missing')).length, 4);
+ await engine.updateProfile({ authorizationConfirmedAt: null });
+ const unconfirmed = (await engine.snapshot()).packets.find(item => item.id === packet.id)!;
+ assert.equal(unconfirmed.status, 'needs_input');
+ assert.ok(unconfirmed.unresolved.some(item => item.includes('Confirm a sourced or saved exact answer')));
+});
+
+test('confirmed general relocation and onsite answers reuse both polarities but never imply location-specific commitments', async t => {
+ const { engine } = await fixture(t);
+ await engine.updateProfile({ savedAnswers: [
+  { id: 'relocation', question: 'Are you open to relocation?', answer: 'No', confirmedAt: iso },
+  { id: 'onsite', question: 'Are you willing to work on site?', answer: 'No', confirmedAt: iso },
+ ] });
+ const labels = ['Are you willing to relocate?', 'Are you willing to work in-office?', 'Are you open to relocation to Chicago?', 'Are you willing to work on site three days per week?', 'Do you agree to work on site?', 'Are you able to work onsite?'];
+ await engine.upsertJob(job('preferences', { questions: labels.map((label, i) => ({ id: `q${i}`, label, required: true, type: 'select', options: ['yes', 'no'] })) }));
+ const packet = await engine.prepare('preferences');
+ assert.deepEqual(packet.answers.map(answer => answer.answer), ['no', 'no']);
+ assert.equal(packet.unresolved.filter(item => item.startsWith('Required answer missing')).length, 4);
+ await engine.updateProfile({ savedAnswers: [{ id: 'relocation', question: 'Are you open to relocation?', answer: 'No', confirmedAt: iso }, { id: 'conflict', question: 'Are you willing to relocate?', answer: 'Yes', confirmedAt: iso }] });
+ await engine.upsertJob(job('conflicting-preferences', { questions: [{ id: 'relocation', label: 'Would you be willing to relocate?', required: true, type: 'text' }] }));
+ assert.equal((await engine.prepare('conflicting-preferences')).answers.length, 0, 'Conflicting saved canonical answers require user review');
 });
 
 test('an exact saved answer cannot put a job start date or phone number into education month and country selectors', async t => {
@@ -346,11 +384,34 @@ test('submission needs evidence, records confirmation, and prevents duplicate ap
  await assert.rejects(engine.beginSubmission(p.id), /Existing submitted/); assert.equal((await engine.snapshot()).packets[0].status, 'submitted');
 });
 
-test('stale open checks/forms and unsupported systems stop submission', async t => {
+test('stale open checks and forms stop submission', async t => {
  let clock = NOW; const { engine } = await fixture(t, () => clock); const p = await approved(engine);
  clock = new Date(NOW.getTime() + 25 * 3_600_000); await assert.rejects(engine.beginSubmission(p.id), /within 24 hours/);
- clock = NOW; await engine.upsertJob(job('ashby', { source: 'ashby' })); const ap = await engine.prepare('ashby'); await engine.approve([ap.id]);
- await assert.rejects(engine.beginSubmission(ap.id), /manual handoff/);
+});
+
+for (const source of ['ashby', 'manual'] as const) test(`${source} hosted forms submit with exact approval and retain freshness, lock and uncertain-outcome protection`, async t => {
+ let clock = NOW; const { engine } = await fixture(t, () => clock);
+ const posted = job(source, { source, applyUrl: `https://example.com/apply/${source}` });
+ await engine.upsertJob(posted); const packet = await engine.prepare(posted.id);
+ await assert.rejects(engine.beginSubmission(packet.id), /current approval/);
+ await engine.approve([packet.id]);
+ clock = new Date(NOW.getTime() + 25 * 3_600_000);
+ await assert.rejects(engine.beginSubmission(packet.id), /within 24 hours/);
+ clock = NOW;
+ const other = await approved(engine, `${source}-other`); const active = await engine.beginSubmission(other.id);
+ await assert.rejects(engine.beginSubmission(packet.id), /in progress/);
+ await engine.finishSubmission(active.id, 'failed', 'Employer reports validation failure; no application was submitted.');
+ const attempt = await engine.beginSubmission(packet.id); assert.equal(attempt.outcome, 'in_progress');
+ await engine.finishSubmission(attempt.id, 'unknown', 'Connection interrupted after Submit; no confirmation was observed.');
+ await assert.rejects(engine.beginSubmission(packet.id), /unknown outcome/);
+});
+
+test('changed reviewed Ashby questions require a new approval before a browser attempt', async t => {
+ const { engine } = await fixture(t); const posted = job('ashby-change', { source: 'ashby' });
+ await engine.upsertJob(posted); const packet = await engine.prepare(posted.id); await engine.approve([packet.id]);
+ await engine.upsertJob({ ...posted, questions: [...posted.questions, { id: 'new-consent', label: 'Do you agree to the terms?', required: true, type: 'select', options: ['Yes', 'No'] }] });
+ await assert.rejects(engine.beginSubmission(packet.id), /current approval/);
+ assert.equal((await engine.snapshot()).attempts.length, 0);
 });
 
 test('unsupported forms receive a recorded manual handoff without starting a browser attempt', async t => {
@@ -638,11 +699,105 @@ test('unknown and overlapping compensation never pass a configured floor', async
 
 test('legacy backups without optional enhancement fields retain approval validity and default safely', async t => {
  const { engine, store } = await fixture(t); const p = await approved(engine); const legacy = await store.read();
- delete legacy.profile.documents; delete legacy.priorApplications; delete legacy.settings.minimumAnnualCompensation; delete legacy.settings.compensationBasis;
+ delete legacy.profile.documents; delete legacy.priorApplications; delete legacy.settings.minimumAnnualCompensation; delete legacy.settings.compensationBasis; delete legacy.settings.preferredLocations; delete legacy.settings.workplacePreference;
  for (const packet of legacy.packets) delete packet.attachments;
  const normalized = validateAppState(legacy); assert.deepEqual(normalized.profile.documents, []); assert.deepEqual(normalized.priorApplications, []);
  assert.equal(normalized.settings.minimumAnnualCompensation, null); assert.equal(normalized.settings.compensationBasis, 'base');
+ assert.deepEqual(normalized.settings.preferredLocations, []); assert.equal(normalized.settings.workplacePreference, 'any');
  await store.update(s => { Object.assign(s, normalized); }); await engine.beginSubmission(p.id);
+});
+
+test('location and workplace search preferences persist without inventing employer compatibility', async t => {
+ const { engine, store } = await fixture(t);
+ await engine.upsertJob(job('location-preference'));
+ await engine.updateSettings({ preferredLocations: ['Austin, TX', 'Chicago, IL'], workplacePreference: 'remote' });
+ const saved = await store.read();
+ assert.deepEqual(saved.settings.preferredLocations, ['Austin, TX', 'Chicago, IL']);
+ assert.equal(saved.settings.workplacePreference, 'remote');
+ assert.equal((await engine.snapshot()).jobs[0].eligible, true, 'Unverified location text is not a basis for denying eligibility');
+ await assert.rejects(engine.updateSettings({ preferredLocations: [' '] }), /preferred locations/);
+ await assert.rejects(engine.updateSettings({ preferredLocations: Array.from({ length: 31 }, () => 'Chicago') }), /preferred locations/);
+ await assert.rejects(engine.updateSettings({ workplacePreference: 'unknown' as any }), /workplace preference/);
+ assert.throws(() => validateAppState({ ...saved, settings: { ...saved.settings, preferredLocations: [''] } }));
+ assert.throws(() => validateAppState({ ...saved, settings: { ...saved.settings, workplacePreference: 'unknown' } }));
+ assert.deepEqual((await store.read()).settings, saved.settings);
+});
+
+test('onboarding saves profile and preferences atomically and refreshes approvals once', async t => {
+ const { engine, store } = await fixture(t);
+ await engine.upsertJob(job('onboarding', { title: 'New Graduate Data Analyst 2027' }));
+ const packet = await engine.prepare('onboarding'); await engine.approve([packet.id]); const before = await store.read();
+ await assert.rejects(engine.updateOnboarding({ profile: { name: 'Changed Fixture' }, settings: { preferredLocations: [''] } }), /preferred locations/);
+ assert.deepEqual(await store.read(), before, 'Invalid preferences must not half-save the profile or revoke approval');
+ await engine.updateOnboarding({ profile: { name: 'Changed Fixture', email: 'changed@example.test', phone: '+1 202 555 0111' }, settings: { careerStage: 'new_grad', careerTargetsConfirmed: true, rolePriority: ['data'], preferredLocations: ['Chicago'], workplacePreference: 'hybrid' } });
+ const after = await store.read();
+ assert.equal(after.profile.name, 'Changed Fixture'); assert.equal(after.settings.workplacePreference, 'hybrid');
+ assert.equal(after.packets[0].version, before.packets[0].version + 1);
+ assert.ok(after.approvals.every(approval => approval.revokedAt));
+ assert.equal(after.packets[0].approvalId, null);
+ const nameFact = after.profile.facts.find(fact => fact.id === 'name')!;
+ assert.equal(nameFact.value, 'Changed Fixture'); assert.equal(nameFact.confirmed, true); assert.equal(nameFact.source, 'user:confirmed-profile');
+ await assert.rejects(engine.beginSubmission(packet.id), /current approval/);
+});
+
+test('explicit contact inputs complete new blank-profile application fields', async t => {
+ const { engine, store } = await fixture(t);
+ await store.update(s => { s.profile.name = ''; s.profile.email = ''; s.profile.phone = ''; s.profile.facts = []; });
+ await engine.upsertJob(job('blank-contacts', { title: 'New Graduate Data Analyst 2027', questions: [
+  { id: 'name', label: 'Full name', required: true, type: 'text' },
+  { id: 'email', label: 'Email address', required: true, type: 'text' },
+  { id: 'phone', label: 'Phone number', required: true, type: 'text' },
+ ] }));
+ const packet = await engine.prepare('blank-contacts'); assert.equal(packet.status, 'needs_input');
+ await engine.updateOnboarding({ profile: { name: 'Taylor Fixture', email: 'taylor@example.test', phone: '+1 202 555 0199' }, settings: { careerStage: 'new_grad', careerTargetsConfirmed: true, rolePriority: ['data'] } });
+ const filled = (await engine.snapshot()).packets.find(item => item.id === packet.id)!;
+ assert.deepEqual(filled.answers.map(answer => answer.answer), ['Taylor Fixture', 'taylor@example.test', '+1 202 555 0199']);
+ assert.ok(filled.answers.every(answer => answer.confirmed)); assert.equal(filled.status, 'ready');
+ await engine.approve([filled.id]);
+});
+
+test('current core contact fields supersede older saved answers and keep source facts after an edit', async t => {
+ const { engine } = await fixture(t); const old = (await engine.snapshot()).profile;
+ const fields = [
+  ['name', 'Name', old.name], ['full', 'Full name', old.name],
+  ['first', 'First name', old.name.split(' ')[0]], ['last', 'Last name', old.name.split(' ').slice(1).join(' ')],
+  ['email', 'Email address', old.email], ['phone', 'Phone number', old.phone],
+ ] as const;
+ await engine.updateProfile({ savedAnswers: fields.map(([id, question, answer]) => ({ id: `saved-${id}`, question, answer, confirmedAt: iso })) });
+ await engine.upsertJob(job('saved-contacts', { questions: fields.map(([id, label]) => ({ id, label, required: true, type: 'text' })) }));
+ const packet = await engine.prepare('saved-contacts'); assert.equal(packet.status, 'ready');
+ await engine.approve([packet.id]);
+ await engine.updateProfile({ name: 'Taylor New Fixture', email: 'new@example.test', phone: '+1 202 555 0115' });
+ const updated = (await engine.snapshot()).packets.find(item => item.id === packet.id)!;
+ assert.deepEqual(updated.answers.map(answer => answer.answer), ['Taylor New Fixture', 'Taylor New Fixture', 'Taylor', 'New Fixture', 'new@example.test', '+1 202 555 0115']);
+ assert.deepEqual(updated.answers.map(answer => answer.factIds), [['name'], ['name'], ['name'], ['name'], ['email'], ['phone']]);
+ assert.equal(updated.status, 'ready'); await engine.approve([updated.id]);
+ const stale = await engine.editPacket(updated.id, { answers: updated.answers.map(answer => answer.questionId === 'email' ? { ...answer, answer: old.email } : answer) });
+ assert.equal(stale.status, 'needs_input');
+ await assert.rejects(engine.approve([stale.id]), /Confirm a sourced or saved exact answer/);
+});
+
+test('legal and preferred names require their own exact saved answers and survive plain contact changes', async t => {
+ const { engine } = await fixture(t);
+ const questions = [{ id: 'legal', label: 'Legal name *', required: true, type: 'text' }, { id: 'preferred', label: 'Preferred name', required: true, type: 'text' }];
+ await engine.upsertJob(job('specific-names', { questions }));
+ const packet = await engine.prepare('specific-names'); assert.equal(packet.answers.length, 0);
+ await engine.editPacket(packet.id, { answers: [{ questionId: 'legal', question: 'Legal name *', answer: SYNTHETIC_NAME, factIds: ['name'], confirmed: true }] });
+ await assert.rejects(engine.approve([packet.id]), /Confirm a sourced or saved exact answer/);
+ await engine.updateProfile({ name: 'Taylor Fixture', savedAnswers: [
+  { id: 'saved-legal', question: 'Legal name', answer: 'Taylor Legal Fixture', confirmedAt: iso },
+  { id: 'saved-preferred', question: 'Preferred name', answer: 'Tay', confirmedAt: iso },
+ ] });
+ const updated = (await engine.snapshot()).packets.find(item => item.id === packet.id)!;
+ assert.deepEqual(updated.answers.map(answer => answer.answer), ['Taylor Legal Fixture', 'Tay']);
+ assert.equal(updated.status, 'ready'); await engine.approve([updated.id]);
+});
+
+test('onboarding cannot modify profile or preferences during an active browser attempt', async t => {
+ const { engine, store } = await fixture(t); const packet = await approved(engine); await engine.beginSubmission(packet.id);
+ const before = await store.read();
+ await assert.rejects(engine.updateOnboarding({ profile: { phone: '+1 202 555 0112' }, settings: { workplacePreference: 'remote' } }), /active submission/);
+ assert.deepEqual(await store.read(), before);
 });
 
 test('dashboard applied marker persists, is idempotent and protects only the matching requisition', async t => {

@@ -37,9 +37,9 @@ async function main() {
   if (!resume) {
     if (!process.stdin.isTTY) throw new Error('Pass --resume /absolute/path/to/resume.pdf for non-interactive setup.');
     const rl = createInterface({ input: process.stdin, output: process.stdout });
-    try { console.log('Career Agent setup. Use your own documents and accounts.'); resume = (await rl.question('Path to your unchanged résumé PDF: ')).trim(); backend = (await rl.question('Storage [sqlite / supabase] (sqlite): ')).trim() || 'sqlite'; if (backend === 'supabase') supabaseUrl = (await rl.question('Your Supabase project URL (not a key): ')).trim(); } finally { rl.close(); }
+    try { console.log('Career Agent setup. Your profile and job preferences will be collected in the dashboard.'); resume = (await rl.question('Path to your unchanged résumé PDF: ')).trim(); if (backend === 'supabase' && !supabaseUrl) supabaseUrl = (await rl.question('Your Supabase project URL (not a key): ')).trim(); } finally { rl.close(); }
   }
   await configureWorkspace({ resume, backend, port, dataDir: flag('data-dir'), supabaseUrl });
-  console.log(`Private configuration created. No application state changed.\n${backend === 'supabase' ? 'Apply supabase/schema.sql to your own project and privately set SUPABASE_SECRET_KEY first.\n' : ''}Next: npm run doctor\nThen: npm run build && npm start\nOpen http://127.0.0.1:${port}\nChoose Codex or Claude Code in the dashboard. See docs/AGENT_SETUP.md.`);
+  console.log(`Private configuration created. No application state changed.\n${backend === 'supabase' ? 'Apply supabase/schema.sql to your own project and privately set SUPABASE_SECRET_KEY first.\n' : 'Using private storage on your computer.\n'}Next: npm run doctor\nThen: npm run build && npm start\nOpen http://127.0.0.1:${port}\nComplete Start here, then copy your job-search instruction. See docs/AGENT_SETUP.md.`);
 }
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main().catch(e => { console.error(e.code === 'EEXIST' ? 'Existing .env.local preserved. Setup will not overwrite it.' : e.message); process.exitCode = 1; });

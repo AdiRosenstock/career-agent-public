@@ -180,27 +180,37 @@ function answerShapeMatchesField(questionId: string, label: string, answer: stri
  if (questionId === 'country' && /^phone country$/i.test(label)) return /^[^\d]+\+\d{1,3}$/.test(answer);
  return true;
 }
+function coreContactAnswer(s: AppState, q: FormQuestion): Answer | null {
+ const label = q.label.trim().toLowerCase().replace(/\s*\*$/, '');
+ let answer: string; let key: 'name' | 'email' | 'phone';
+ if (/^(?:full )?name$/.test(label)) { answer = s.profile.name; key = 'name'; }
+ else if (label === 'first name') { answer = s.profile.name.split(' ')[0]; key = 'name'; }
+ else if (label === 'last name') { answer = s.profile.name.split(' ').slice(1).join(' '); key = 'name'; }
+ else if (/^(?:e-?mail|email address)$/.test(label)) { answer = s.profile.email; key = 'email'; }
+ else if (/^(?:phone|phone number|telephone)$/.test(label)) { answer = s.profile.phone; key = 'phone'; }
+ else return null;
+ const fact = s.profile.facts.find(f => f.id === key && f.value === s.profile[key] && f.confirmed && !!f.source);
+ return { questionId: q.id, question: q.label, answer, factIds: fact ? [fact.id] : [], confirmed: !!fact || !!exactSaved(s, q.label, answer) };
+}
 function confirmedProfileAnswer(s: AppState, q: FormQuestion): Answer | null {
- const label = q.label.trim().replace(/\s+/g, ' ');
- const yes = q.options?.length ? q.options.find(option => /^yes$/i.test(option.trim())) : 'Yes';
+ const label = q.label.trim().replace(/\s+/g, ' ').replace(/\s*\*$/, '');
+ const choice = (value: boolean) => q.options?.length ? q.options.find(option => new RegExp(`^${value ? 'yes' : 'no'}$`, 'i').test(option.trim())) : value ? 'Yes' : 'No';
  const saved = (question: string) => exactSaved(s, question)?.answer;
- let answer = ''; let factIds: string[] = [];
+ const savedChoice = (questions: string[]) => {
+  const values = questions.map(question => saved(question)).filter((value): value is string => value !== undefined);
+  const choices = values.map(value => /^yes$/i.test(value.trim()) ? true : /^no$/i.test(value.trim()) ? false : null);
+  if (!choices.length || choices.some(value => value === null || value !== choices[0])) return undefined;
+  return choice(choices[0]!);
+ };
+ let answer: string | undefined; const factIds: string[] = [];
  const confirmedAuthorization = !!s.profile.authorizationConfirmedAt && Number.isFinite(Date.parse(s.profile.authorizationConfirmedAt));
- if (confirmedAuthorization && yes && s.profile.authorizationNow === true
-   && /^(?:are you|do you) (?:currently |legally |lawfully )?(?:authorized|eligible) to work (?:lawfully )?(?:in|within) (?:the )?(?:united states(?: of america)?|u\.?s\.?a?\.?)(?:\s*\(yes\/no\))?\??$/i.test(label)) answer = yes;
- else if (confirmedAuthorization && yes && s.profile.futureSponsorship === true
-   && /\b(?:will you|do you)\b/i.test(label) && /\b(?:future|now or|now, or|at any point)\b/i.test(label)
-   && /\bsponsorship\b/i.test(label) && /\b(?:work|employment|visa|immigration)\b/i.test(label)
-   && !/\b(?:without|do not|won't|will not)\b/i.test(label)) answer = yes;
- else if (yes && /^(?:are you (?:open|willing) to relocat(?:e|ion)|are you open to relocation to)[^?]*\??$/i.test(label)
-   && s.profile.facts.some(f => f.id === 'user-relocation-20260928' && f.confirmed && f.source)) {
-  answer = yes; factIds = ['user-relocation-20260928'];
- }
- else if (yes && /^(?:are you (?:able|willing|open) to (?:work|be|working) (?:in[- ]office|in[- ]person|on[- ]site)|are you willing to work \w+ days per week in our [^?]*office|can you work from our |this position requires you to be in our )/i.test(label)
-   && !/\b(?:excited|understand|confirm|agree)\b/i.test(label)
-   && s.profile.facts.some(f => f.id === 'user-onsite-20260928' && f.confirmed && f.source)) {
-  answer = yes; factIds = ['user-onsite-20260928'];
- }
+ if (confirmedAuthorization && typeof s.profile.authorizationNow === 'boolean'
+   && /^(?:are you|do you) (?:currently |legally |lawfully )?(?:authorized|eligible) to work (?:lawfully )?(?:in|within) (?:the )?(?:united states(?: of america)?|u\.?s\.?a?\.?)(?:\s*\(yes\/no\))?\??$/i.test(label)) answer = choice(s.profile.authorizationNow);
+ else if (confirmedAuthorization && typeof s.profile.futureSponsorship === 'boolean'
+   && /\b(?:now,? or in (?:the )?future|at any (?:point|time))\b/i.test(label)
+   && /^(?:will|do) you (?:(?:now,? or in (?:the )?future|at any (?:point|time)) )?(?:require|need) (?:(?:employment|work|visa|immigration) )?(?:visa )?sponsorship(?: for (?:employment(?: visa status)?|work(?: authorization)?|immigration(?: status)?|visa status)| to work in (?:the )?(?:united states|u\.?s\.?a?\.?))?(?: (?:now,? or in (?:the )?future|at any (?:point|time)))?(?: \(e\.g\.,? h-?1b(?: visa status)?\))?\??$/i.test(label)) answer = choice(s.profile.futureSponsorship);
+ else if (/^(?:are you (?:open|willing) to relocat(?:e|ion)|would you be (?:open|willing) to relocate)\??$/i.test(label)) answer = savedChoice(['Are you open to relocation?', 'Are you willing to relocate?']);
+ else if (/^(?:are you (?:willing|open) to (?:work|be|working)|would you be (?:open|willing) to work) (?:in[- ]office|in[- ]person|on[- ]?site)\??$/i.test(label)) answer = savedChoice(['Are you willing to work on site?', 'Are you willing to work onsite?']);
  else if (/^(?:phone country code|country \(phone dialing code\))$/i.test(label) && /^\+\d{1,3}$/.test(saved('Country (phone dialing code)') || '')) answer = saved('Country (phone dialing code)')!;
  else if (/^(?:city|what city do you live in\?)$/i.test(label) && saved('Location (City)')?.includes(',')) answer = saved('Location (City)')!.split(',')[0].trim();
  else if (/^(?:year of graduation|what is your expected graduation year\?)\s*$/i.test(label) && /^\d{4}-\d{2}$/.test(s.profile.graduation)) answer = s.profile.graduation.slice(0, 4);
@@ -210,23 +220,19 @@ function confirmedProfileAnswer(s: AppState, q: FormQuestion): Answer | null {
 function generateAnswers(s: AppState, job: Job): Answer[] {
  return job.questions.flatMap(q => {
   if (isFileQuestion(q.type)) return [];
+  // Plain contact fields follow the current profile; older saved answers cannot override an edit.
+  const contact = coreContactAnswer(s, q);
+  if (contact) return contact.answer.trim() && (!q.options?.length || q.options.includes(contact.answer)) ? [contact] : [];
   const saved = exactSaved(s, q.label);
   if (saved && answerShapeMatchesField(q.id, q.label, saved.answer) && (!q.options?.length || q.options.includes(saved.answer))) return [{ questionId: q.id, question: q.label, answer: saved.answer, factIds: [], confirmed: true }];
   const confirmed = confirmedProfileAnswer(s, q);
   if (confirmed) return [confirmed];
   const label = q.label.trim().toLowerCase();
-  let answer = ''; let factId = '';
-  if (/^(?:full |legal |preferred )?name\*?$/.test(label)) { answer = s.profile.name; factId = 'name'; }
-  else if (/^first name\*?$/.test(label)) { answer = s.profile.name.split(' ')[0]; factId = 'name'; }
-  else if (/^last name\*?$/.test(label)) { answer = s.profile.name.split(' ').slice(1).join(' '); factId = 'name'; }
-  else if (/^(?:e-?mail|email address)\*?$/.test(label)) { answer = s.profile.email; factId = 'email'; }
-  else if (/^(?:phone|phone number|telephone)\*?$/.test(label)) { answer = s.profile.phone; factId = 'phone'; }
-  else if (linkedinQuestion.test(label)) { answer = s.profile.linkedin; }
+  let answer = '';
+  if (linkedinQuestion.test(label)) { answer = s.profile.linkedin; }
   else if (githubQuestion.test(label)) { answer = s.profile.github; }
-  // Work authorization and demographics deliberately use exact saved wording only.
   if (!answer) return [];
-  const fact = s.profile.facts.find(f => f.id === factId && f.confirmed);
-  return [{ questionId: q.id, question: q.label, answer, factIds: fact ? [fact.id] : [], confirmed: !!fact || answer === s.profile.linkedin || answer === s.profile.github }];
+  return [{ questionId: q.id, question: q.label, answer, factIds: [], confirmed: true }];
  });
 }
 function fillConfirmedAnswers(s: AppState, p: ApplicationPacket, job: Job): void {
@@ -239,16 +245,13 @@ function fillConfirmedAnswers(s: AppState, p: ApplicationPacket, job: Job): void
 }
 function supportedAnswer(s: AppState, answer: Answer): boolean {
  if (!answer.confirmed || !answer.answer.trim()) return false;
+ const contact = coreContactAnswer(s, { id: answer.questionId, label: answer.question, required: true, type: 'text' });
+ if (contact) return contact.confirmed && contact.answer === answer.answer;
  if (answerShapeMatchesField(answer.questionId, answer.question, answer.answer) && exactSaved(s, answer.question, answer.answer)) return true;
  const derived = confirmedProfileAnswer(s, { id: answer.questionId, label: answer.question, required: true, type: 'text' });
- if (derived?.answer === answer.answer) return true;
+ if (derived?.answer.trim().toLowerCase() === answer.answer.trim().toLowerCase()) return true;
  if (/authoriz|sponsor|visa|citizen|gender|ethnic|race\b|veteran|disabil|pronoun/i.test(answer.question)) return false;
- const label = answer.question.trim().toLowerCase();
- if (/^(?:full |legal |preferred )?name\*?$/.test(label)) return answer.answer === s.profile.name;
- if (/^first name\*?$/.test(label)) return answer.answer === s.profile.name.split(' ')[0];
- if (/^last name\*?$/.test(label)) return answer.answer === s.profile.name.split(' ').slice(1).join(' ');
- if (/^(?:e-?mail|email address)\*?$/.test(label)) return answer.answer === s.profile.email;
- if (/^(?:phone|phone number|telephone)\*?$/.test(label)) return answer.answer === s.profile.phone;
+ if (/^(?:legal|preferred) (?:first |last )?name$/i.test(answer.question.trim().replace(/\s*\*$/, ''))) return false;
  if (linkedinQuestion.test(answer.question.trim()) && answer.answer === s.profile.linkedin) return true;
  if (githubQuestion.test(answer.question.trim()) && answer.answer === s.profile.github) return true;
  return answer.factIds.length > 0 && answer.factIds.every(id => s.profile.facts.some(f => f.id === id && f.confirmed && !!f.source));
@@ -295,6 +298,50 @@ function requireApplicationPolicy(s: AppState, job: Job): void {
  const reviews = priorReviewReasons(s, job); if (reviews.length) throw new AgentError(reviews.join('; '));
  const problems = compensationEligibilityReasons(job, s.settings.minimumAnnualCompensation ?? null, s.settings.compensationBasis ?? 'base');
  if (problems.length) throw new AgentError(problems.join('; '));
+}
+
+function validateProfilePatch(s: AppState, patch: Partial<CandidateProfile>): void {
+ if (patch.resume && digest(patch.resume) !== digest(s.profile.resume)) throw new AgentError('The supplied résumé is locked and cannot be replaced through profile edits');
+ if (s.attempts.some(a => a.outcome === 'in_progress')) throw new AgentError('Finish or recover the active submission before editing the candidate profile');
+ if (patch.documents) {
+  if (new Set(patch.documents.map(d => d.id)).size !== patch.documents.length) throw new AgentError('Registered document IDs must be unique', 400);
+  for (const document of patch.documents) if (!documentValid(document)) throw new AgentError(`Document ${document.label} is missing, empty, or does not match its SHA256`);
+ }
+}
+function applyProfilePatch(s: AppState, patch: Partial<CandidateProfile>): void {
+ s.profile = { ...s.profile, ...structuredClone(patch), resume: s.profile.resume };
+ // Explicit contact edits are user-confirmed inputs, including on a blank new profile.
+ for (const [key, label] of [['name', 'Full name'], ['email', 'Email'], ['phone', 'Phone']] as const) {
+  if (patch[key] === undefined) continue;
+  s.profile.facts = s.profile.facts.filter(fact => fact.id !== key);
+  if (patch[key]!.trim()) s.profile.facts.push({ id: key, label, value: patch[key]!, source: 'user:confirmed-profile', confirmed: true });
+ }
+}
+function settingsPolicyChanged(s: AppState, patch: Partial<Settings>): boolean {
+ return patch.careerStage !== undefined || patch.yearsExperience !== undefined || patch.rolePriority !== undefined || patch.roleKeywords !== undefined || (patch.minimumAnnualCompensation !== undefined && patch.minimumAnnualCompensation !== (s.settings.minimumAnnualCompensation ?? null)) || (patch.compensationBasis !== undefined && patch.compensationBasis !== (s.settings.compensationBasis ?? 'base'));
+}
+function validateSettingsPatch(s: AppState, patch: Partial<Settings>): void {
+ if (patch.backend && patch.backend !== s.settings.backend) throw new AgentError('Changing storage requires an explicit export/import and server restart');
+ if (patch.timezone && patch.timezone !== 'America/Chicago') throw new AgentError('The daily ledger is fixed to America/Chicago');
+ if (patch.dailyLimit !== undefined && (!Number.isInteger(patch.dailyLimit) || patch.dailyLimit < 1 || patch.dailyLimit > 20)) throw new AgentError('Daily preparation limit must be between 1 and 20', 400);
+ if (patch.minimumAnnualCompensation !== undefined && patch.minimumAnnualCompensation !== null && (!Number.isFinite(patch.minimumAnnualCompensation) || patch.minimumAnnualCompensation < 0 || patch.minimumAnnualCompensation > 10_000_000)) throw new AgentError('Minimum annual compensation must be a nonnegative annual USD amount', 400);
+ if (patch.rolePriority && (new Set(patch.rolePriority).size !== patch.rolePriority.length || patch.rolePriority.some(role => !roleFamilies.includes(role)))) throw new AgentError('Choose distinct supported career tracks', 400);
+ if (patch.roleKeywords && (patch.roleKeywords.length > 30 || patch.roleKeywords.some(term => typeof term !== 'string' || !term.trim() || term.length > 100))) throw new AgentError('Choose up to 30 role title terms', 400);
+ if (patch.preferredLocations && (patch.preferredLocations.length > 30 || patch.preferredLocations.some(location => typeof location !== 'string' || !location.trim() || location.length > 200))) throw new AgentError('Choose up to 30 preferred locations', 400);
+ if (patch.workplacePreference !== undefined && !['any', 'remote', 'hybrid', 'onsite'].includes(patch.workplacePreference)) throw new AgentError('Choose a supported workplace preference', 400);
+ if (patch.careerStage !== undefined && !['new_grad','early_career','experienced'].includes(patch.careerStage)) throw new AgentError('Choose a supported experience level', 400);
+ if (patch.yearsExperience !== undefined && patch.yearsExperience !== null && (!Number.isFinite(patch.yearsExperience) || patch.yearsExperience < 0 || patch.yearsExperience > 60)) throw new AgentError('Years of experience must be between 0 and 60', 400);
+ if ((patch.careerStage ?? s.settings.careerStage) === 'experienced' && (patch.yearsExperience === undefined ? s.settings.yearsExperience : patch.yearsExperience) == null) throw new AgentError('Enter years of experience for experienced roles', 400);
+ if (patch.careerTargetsConfirmed === true && (!(patch.careerStage ?? s.settings.careerStage) || (!(patch.rolePriority ?? s.settings.rolePriority).length && !(patch.roleKeywords ?? s.settings.roleKeywords)?.length))) throw new AgentError('Choose an experience level and at least one career path or title term', 400);
+ if (settingsPolicyChanged(s, patch) && s.attempts.some(a => a.outcome === 'in_progress')) throw new AgentError('Finish or recover the active submission before changing compensation requirements');
+}
+function refreshPendingPackets(s: AppState, current: Date, fillAnswers = false): void {
+ s.jobs = s.jobs.map(job => applyPriorApplicationPolicy(s, applyCandidatePolicy(applyCompensationPolicy(job, s.settings), s, current)));
+ for (const p of s.packets.filter(p => !protectedStatuses.has(p.status))) {
+  revoke(s, p, current.toISOString()); p.version++;
+  if (fillAnswers) fillConfirmedAnswers(s, p, getJob(s, p.jobId));
+  refreshPacket(s, p, current);
+ }
 }
 
 export function createEngine(store: Store, options: { workspace?: string; now?: () => Date } = {}) {
@@ -392,7 +439,6 @@ export function createEngine(store: Store, options: { workspace?: string; now?: 
   async beginSubmission(packetId: string): Promise<SubmissionAttempt> {
    return store.update(s => {
     const p = getPacket(s, packetId); const j = getJob(s, p.jobId); requireApplicationPolicy(s, j); requireResume(s); requireEligible(j, now(), s.profile, s.settings); requireAttachments(s, p, j);
-    if (!['greenhouse', 'lever'].includes(j.source)) throw new AgentError('This applicant tracking system requires manual handoff in v1');
     if (!isFresh(j.fetchedAt, now(), 24) || !isFresh(j.formInspectedAt, now(), 24)) throw new AgentError('Recheck the open posting and live application form within 24 hours before submitting');
     if (s.attempts.some(a => a.outcome === 'in_progress')) throw new AgentError('Another submission is in progress; reconcile it before starting another');
     if (s.attempts.some(a => sameJob(getJob(s, a.jobId), j) && ['submitted', 'unknown'].includes(a.outcome))) throw new AgentError('Existing submitted or unknown outcome must be reconciled; do not retry');
@@ -460,38 +506,24 @@ export function createEngine(store: Store, options: { workspace?: string; now?: 
   },
   async updateProfile(patch: Partial<CandidateProfile>): Promise<CandidateProfile> {
    return store.update(s => {
-    if (patch.resume && digest(patch.resume) !== digest(s.profile.resume)) throw new AgentError('The supplied résumé is locked and cannot be replaced through profile edits');
-    if (s.attempts.some(a => a.outcome === 'in_progress')) throw new AgentError('Finish or recover the active submission before editing the candidate profile');
-    if (patch.documents) {
-     if (new Set(patch.documents.map(d => d.id)).size !== patch.documents.length) throw new AgentError('Registered document IDs must be unique', 400);
-     for (const document of patch.documents) if (!documentValid(document)) throw new AgentError(`Document ${document.label} is missing, empty, or does not match its SHA256`);
-    }
-    s.profile = { ...s.profile, ...structuredClone(patch), resume: s.profile.resume };
-    s.jobs = s.jobs.map(job => applyPriorApplicationPolicy(s, applyCandidatePolicy(job, s, now())));
-    for (const p of s.packets.filter(p => !protectedStatuses.has(p.status))) { revoke(s, p, now().toISOString()); p.version++; fillConfirmedAnswers(s, p, getJob(s, p.jobId)); refreshPacket(s, p, now()); }
+    validateProfilePatch(s, patch); applyProfilePatch(s, patch); refreshPendingPackets(s, now(), true);
     return s.profile;
    });
   },
   async updateSettings(patch: Partial<Settings>): Promise<Settings> {
    return store.update(s => {
-    if (patch.backend && patch.backend !== s.settings.backend) throw new AgentError('Changing storage requires an explicit export/import and server restart');
-    if (patch.timezone && patch.timezone !== 'America/Chicago') throw new AgentError('The daily ledger is fixed to America/Chicago');
-    if (patch.dailyLimit !== undefined && (!Number.isInteger(patch.dailyLimit) || patch.dailyLimit < 1 || patch.dailyLimit > 20)) throw new AgentError('Daily preparation limit must be between 1 and 20', 400);
-    if (patch.minimumAnnualCompensation !== undefined && patch.minimumAnnualCompensation !== null && (!Number.isFinite(patch.minimumAnnualCompensation) || patch.minimumAnnualCompensation < 0 || patch.minimumAnnualCompensation > 10_000_000)) throw new AgentError('Minimum annual compensation must be a nonnegative annual USD amount', 400);
-    if (patch.rolePriority && (new Set(patch.rolePriority).size !== patch.rolePriority.length || patch.rolePriority.some(role => !roleFamilies.includes(role)))) throw new AgentError('Choose distinct supported career tracks', 400);
-    if (patch.roleKeywords && (patch.roleKeywords.length > 30 || patch.roleKeywords.some(term => typeof term !== 'string' || !term.trim() || term.length > 100))) throw new AgentError('Choose up to 30 role title terms', 400);
-    if (patch.careerStage !== undefined && !['new_grad','early_career','experienced'].includes(patch.careerStage)) throw new AgentError('Choose a supported experience level', 400);
-    if (patch.yearsExperience !== undefined && patch.yearsExperience !== null && (!Number.isFinite(patch.yearsExperience) || patch.yearsExperience < 0 || patch.yearsExperience > 60)) throw new AgentError('Years of experience must be between 0 and 60', 400);
-    if ((patch.careerStage ?? s.settings.careerStage) === 'experienced' && (patch.yearsExperience === undefined ? s.settings.yearsExperience : patch.yearsExperience) == null) throw new AgentError('Enter years of experience for experienced roles', 400);
-    if (patch.careerTargetsConfirmed === true && (!(patch.careerStage ?? s.settings.careerStage) || (!(patch.rolePriority ?? s.settings.rolePriority).length && !(patch.roleKeywords ?? s.settings.roleKeywords)?.length))) throw new AgentError('Choose an experience level and at least one career path or title term', 400);
-    const changedPolicy = patch.careerStage !== undefined || patch.yearsExperience !== undefined || patch.rolePriority !== undefined || patch.roleKeywords !== undefined || (patch.minimumAnnualCompensation !== undefined && patch.minimumAnnualCompensation !== (s.settings.minimumAnnualCompensation ?? null)) || (patch.compensationBasis !== undefined && patch.compensationBasis !== (s.settings.compensationBasis ?? 'base'));
-    if (changedPolicy && s.attempts.some(a => a.outcome === 'in_progress')) throw new AgentError('Finish or recover the active submission before changing compensation requirements');
-    s.settings = { ...s.settings, ...patch };
-    if (changedPolicy) {
-     s.jobs = s.jobs.map(job => applyPriorApplicationPolicy(s, applyCandidatePolicy(applyCompensationPolicy(job, s.settings), s, now())));
-     for (const p of s.packets.filter(p => !protectedStatuses.has(p.status))) { revoke(s, p, now().toISOString()); p.version++; refreshPacket(s, p, now()); }
-    }
+    validateSettingsPatch(s, patch); const changedPolicy = settingsPolicyChanged(s, patch);
+    s.settings = { ...s.settings, ...structuredClone(patch) };
+    if (changedPolicy) refreshPendingPackets(s, now());
     return s.settings;
+   });
+  },
+  async updateOnboarding(input: { profile: Partial<CandidateProfile>; settings: Partial<Settings> }): Promise<{ profile: CandidateProfile; settings: Settings }> {
+   return store.update(s => {
+    validateProfilePatch(s, input.profile); validateSettingsPatch(s, input.settings);
+    applyProfilePatch(s, input.profile); s.settings = { ...s.settings, ...structuredClone(input.settings) };
+    refreshPendingPackets(s, now(), true);
+    return { profile: s.profile, settings: s.settings };
    });
   },
   async markAlreadyApplied(jobId: string): Promise<PriorApplication> {

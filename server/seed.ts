@@ -26,7 +26,7 @@ export async function createSeed(options: { resumePath?: string; originalPath?: 
    resume: { path: resumePath, originalPath, sha256, filename: basename(resumePath) },
   },
   jobs: [], packets: [], approvals: [], attempts: [], runs: [], boards: [], preparationLedger: [],
-  settings: { dailyLimit: 20, timezone: 'America/Chicago', scheduleTime: '09:00', rolePriority: ['product', 'data', 'finance', 'consulting', 'software'], backend: 'sqlite', automationId: null },
+  settings: { dailyLimit: 20, timezone: 'America/Chicago', scheduleTime: '09:00', rolePriority: ['product', 'data', 'finance', 'consulting', 'software'], preferredLocations: [], workplacePreference: 'any', backend: 'sqlite', automationId: null },
  };
  // Private candidate details are opt-in local data, never bundled source defaults.
  if (options.profileSeedPath) {

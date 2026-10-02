@@ -27,6 +27,15 @@ test('loopback dashboard API protects writes, serves original bytes, and rejects
  const confirmation=await fetch(`${base}/api/approvals`,{method:'POST',headers:{'Content-Type':'application/json','X-Career-Agent':'dashboard'},body:JSON.stringify({packetIds:[]})});assert.equal(confirmation.status,400);
  const profilePatch=await fetch(`${base}/api/profile`,{method:'POST',headers:{'Content-Type':'application/json','X-Career-Agent':'dashboard'},body:JSON.stringify({graduation:'2028-05'})});assert.equal(profilePatch.status,200);assert.equal((await profilePatch.json() as any).graduation,'2028-05');
  const badProfile=await fetch(`${base}/api/profile`,{method:'POST',headers:{'Content-Type':'application/json','X-Career-Agent':'dashboard'},body:JSON.stringify({authorizationNow:'guess'})});assert.equal(badProfile.status,400);
+ const onboarding=(body:unknown)=>fetch(`${base}/api/onboarding`,{method:'POST',headers:{'Content-Type':'application/json','X-Career-Agent':'dashboard'},body:JSON.stringify(body)});
+ const invalidSetup=await onboarding({profile:{name:'Must not be saved'},settings:{careerStage:'experienced',yearsExperience:null,careerTargetsConfirmed:true}});
+ assert.equal(invalidSetup.status,400);assert.equal((await fetch(`${base}/api/state`).then(r=>r.json()) as any).profile.name,'','Invalid setup must not save half a profile');
+ const savedSetup=await onboarding({profile:{name:'Jamie Example',email:'jamie@example.test',phone:'+1 202-555-0110',authorizationNow:true,authorizationAtStart:true,futureSponsorship:false,authorizationConfirmedAt:new Date().toISOString()},settings:{careerStage:'early_career',rolePriority:['design'],roleKeywords:['UX designer'],careerTargetsConfirmed:true,preferredLocations:['Chicago'],workplacePreference:'hybrid'}});
+ assert.equal(savedSetup.status,200,await savedSetup.text());
+ const work=await fetch(`${base}/api/work`).then(r=>r.json()) as any;
+ assert.deepEqual(work.setupGaps,[]);assert.deepEqual(work.criteria.preferredLocations,['Chicago']);assert.equal(work.criteria.workplacePreference,'hybrid');
+ assert.equal((await fetch(`${base}/api/work?limit=1000`)).status,400);
+ assert.equal((await fetch(`${base}/api/agent-prompt?mode=invalid`)).status,400);
  await writeFile(state.profile.resume.path,'%PDF-1.4 tampered');assert.equal((await fetch(`${base}/api/resume`)).status,409);
  const backup=await fetch(`${base}/api/export`);assert.match(backup.headers.get('content-disposition')||'',/attachment/);assert.equal((await backup.json() as any).settings.dailyLimit,5);
 });

@@ -23,112 +23,33 @@ Research opportunities. Prepare with facts. Review every application.
 
 ## Start here: no coding experience needed
 
-Career Agent helps you organize job applications on your own computer. **You do not need to write code.** A coding assistant can handle installation and guide you through the app, although you may still need to approve an installation, sign in, or choose a file.
+Career Agent helps your assistant find suitable jobs, complete applications and keep the results in one place. **You do not need to write code or make an agent plan.** Save your details on the dashboard once, then let Codex or Claude Code work from them.
 
-### What you need
+You need your own computer, internet access, **Codex or Claude Code with access to that computer**, and your original résumé PDF. These assistants are separate products; Career Agent does not install or provide them. If you have neither, ask someone to help you set one up. You can also try the fictional demo before adding your résumé.
 
-- Your own computer with internet access.
-- **Codex or Claude Code with access to that computer.** These are separate tools; Career Agent does not install or provide them. If you already have one, use it. If you have neither, ask someone to help you set one up first. An ordinary website chat without computer access cannot install this app for you.
-- Your résumé saved as a PDF. If you do not have it ready, you can try the fictional demo first.
+1. Open Codex or Claude Code on your computer and send the message below.
+2. Open the dashboard link it gives you. Complete **Start here** with your profile, job interests, location/workplace preferences and work authorization.
+3. Choose your assistant on the dashboard and copy its preparation instruction into the same chat. The assistant searches and prepares applications from your saved choices.
+4. Answer any missing personal questions in **Review queue → Needs answers**. Repeated questions can be answered together.
+5. Review the exact packets, approve the ones you want, and copy the dashboard's submission instruction to your assistant. It completes supported browser forms, submits that approved batch and records actual confirmation evidence.
 
-### What to do
-
-1. Open **Codex or Claude Code** on your computer and start a new chat.
-2. Copy the short message in the box below. Paste it into the assistant's chat and send it. You do not paste it into GitHub or a terminal.
-3. Let the assistant work. If it asks to choose a folder, pick somewhere easy to find, such as Documents. If it asks for your résumé, tell it where the PDF is saved. You can say **“I don't know how to find that; walk me through it.”**
-4. When setup is finished, click the dashboard link the assistant gives you. A working dashboard opens in your browser with **Applications**, **Your profile**, and **Settings** in the left menu.
-5. Ask the assistant to walk you through those screens, one at a time.
-
-**Copy this message:**
+**Copy this message to your assistant:**
 
 ```text
-Please install Career Agent on my computer and help me use it:
+Install and open Career Agent for me:
 https://github.com/AdiRosenstock/career-agent-public
-
-I have no technical experience. Read the project's README and setup instructions,
-then do the installation for me. Explain anything I need to click in plain
-language, one step at a time. Do not just give me a list of terminal commands.
-
-Preserve any existing files and settings. Start with the easiest local setup.
-Ask where my original résumé PDF is saved and help me find it if needed.
-If it is not ready, let me try the fictional demo instead. Never change my PDF.
-
-Check that the app works, give me a clickable dashboard link, and guide me
-through my profile, preferences and job filters. Check whether the current
-June 2027 US graduate limitations fit me before preparing applications.
-Explain how to reopen the app next time and what needs to keep running.
-
-If something fails, investigate and help fix it. If you cannot do a step,
-explain exactly what I need to click or who can help. Do not ask for passwords
-or secret keys in chat. Do not guess my answers, submit applications, send
-messages or start automations.
+Follow the README and shared job-application-agent skill. Use the default local
+setup, preserve existing files, and open Start here for my profile and job choices.
+Ask in chat only if you need help locating my original résumé PDF.
 ```
 
-### If you get stuck
+The assistant handles installation. You may need to choose a file, approve a software installation, or sign in yourself. Personal answers belong on the dashboard, so you do not need a long chat interview. Browser access is required for actual employer forms; login, CAPTCHA and assessments may need your action. Agent subscriptions and external tools can have their own costs; this project's code is free.
 
-Paste this into the same assistant chat:
+If you get stuck, tell the same assistant: **“I'm stuck at [what you see]. Fix it or show me the next click.”**
 
-> I'm stuck at this step: [describe what you see]. Please help me fix it. Give me one action at a time and explain where to click. I don't know technical terms.
+To return later, say: **“Open my existing Career Agent and continue from my saved dashboard.”** The app runs on your computer; restarting the computer or stopping its process closes it until reopened. Your saved records remain on disk.
 
-You do not need to understand Git, Node, databases or servers before trying the app. The assistant uses the instructions below to handle those parts. Your agent may have subscription or usage costs; Career Agent's code is free.
-
-### Come back another day
-
-Reopen the same assistant chat and say:
-
-> Open my existing Career Agent app again. Keep my saved information and do not repeat setup. Give me the dashboard link.
-
-This is a local app: closing its running process or restarting your computer stops it until you start it again. The saved records remain on disk. A browser bookmark alone does not start the app.
-
-<details>
-<summary>Detailed installation instructions for the assistant</summary>
-
-The longer prompt below is optional. It specifies the same setup with exact commands for an assistant or someone helping you.
-
-```text
-Install and set up Career Agent on my computer:
-https://github.com/AdiRosenstock/career-agent-public
-
-Do the setup work, not just explain it. Check my operating system and existing
-Git and Node installations. Use Node 22 (at least 22.16) for installation and
-execution. If a prerequisite is missing, help install it from its official
-source, respecting any required permissions.
-
-Clone the repository into a suitable local folder, or reuse an existing
-checkout without overwriting changes. Read README.md, AGENTS.md, and CLAUDE.md
-when applicable. Run npm ci. Preserve any existing .env.local, database,
-documents, and storage choice.
-
-For a new workspace, ask me for the full path to my original résumé PDF.
-Use local SQLite unless I request another backend. Run setup with
-npm run setup -- --resume "FULL_PATH_TO_MY_PDF" --backend sqlite
-using the actual path I provide, not the placeholder. Do not rewrite my PDF.
-If I do not have it ready, start the fictional demo with npm run demo instead,
-and explain how to finish personal setup later.
-
-Build with npm run build, run npm run doctor, and fix setup errors.
-Start npm start for my personal workspace and check that the dashboard loads
-at http://127.0.0.1:4317 (the demo uses http://127.0.0.1:4318).
-If a port is occupied, identify the existing service instead of killing it.
-Keep the app running and tell me how to stop and reopen it.
-
-Walk me through Your profile and Settings. Explain that automatic preparation
-currently supports US full-time roles for a June 2027 graduation; do not assume
-that is my graduation date. Show me company, sponsorship and pay filters.
-
-Help me choose Codex or Claude Code in the dashboard. Explain what browser
-and email tools I need for assisted work, and guide me through connecting my
-own tools only when I request it. The dashboard's assistant selector does not
-connect accounts. Do not ask me to paste secrets into chat or tracked files.
-
-Do not submit applications, send messages, start automations, publish my
-personal data, or invent profile answers. End with the working local URL,
-what was installed, and any genuinely unfinished setup steps.
-```
-
-</details>
-
-Prefer doing it yourself? Follow the [step-by-step quick start](#quick-start) below. To try fictional data first, tell your assistant: **“Set up the demo only; do not ask for my résumé yet.”**
+Prefer installing it yourself? Follow the [quick start](#quick-start). To try fictional data first, say: **“Set up the demo only.”**
 
 Career Agent is an open-source, local-first application workspace, built around a simple requirement: reduce repetitive application work while keeping the candidate in control. It brings job research, sourced facts, unchanged documents, draft answers, duplicate checks, and review history into one place.
 
@@ -138,7 +59,7 @@ The dashboard is the system of record. Codex or Claude Code handles research and
 
 ![Career Agent desktop application desk with built-in filters and fictional demonstration data](docs/assets/workspace.png)
 
-> **Current scope:** US full-time 2027 graduate and early-career roles across product, data, software, finance, and consulting. It is a single-user local application, not a hosted multi-user service. Other countries, cohorts, and independent background workers need further development.
+> **Current scope:** US full-time jobs at your saved new graduate, early-career or experienced level, across your selected career paths and job titles. It is a single-user local application. Other countries and independent background workers need further development.
 
 ## What you can do
 
@@ -146,13 +67,14 @@ The dashboard is the system of record. Codex or Claude Code handles research and
 |---|---|
 | Filter saved roles | Company, location, sponsorship evidence, compensation, career track, and status; built-in quick views and sorting |
 | Discover opportunities | Read public Greenhouse, Lever, and Ashby job feeds; import sourced manual postings |
-| Keep a factual profile | Save confirmed experience and exact reusable answers with provenance |
+| Set up once | Save your profile, career stage, role interests, location/workplace choices and confirmed reusable answers |
+| Answer missing questions | Resolve repeated personal questions together in the dashboard while the agent continues other jobs |
 | Compare compensation | Check annual USD base or total pay against your selected floor; keep ambiguous ranges in research |
 | Research sponsorship | Separate role-specific policy from employer history and explicit refusals |
 | Avoid duplicate applications | Match prior evidence by ATS identity, URL, requisition, and role; hold uncertain identities for review |
 | Prepare review packets | Track tailored answers, open questions, document choices, and content versions |
 | Preserve original documents | Copy PDFs without rewriting them and verify SHA-256 before use |
-| Fill with human review | Use your agent’s browser tools or the optional basic-field helper; keep final submission under your control |
+| Complete applications | Your agent fills supported browser forms and can submit the exact batch you review, approve and ask it to execute |
 | Track outcomes | Keep handoffs, failures, confirmed submissions, and unknown outcomes distinct |
 
 The app does not run an invisible AI agent, store email credentials, take candidate assessments, bypass CAPTCHA, or guarantee compatibility with every employer form. A ready packet is not proof that a live form is complete.
@@ -161,7 +83,7 @@ The app does not run an invisible AI agent, store email credentials, take candid
 
 You run Career Agent on **your own computer**. There is no website account to create. Your profile and documents stay in your private workspace. The dashboard works for manual tracking; Codex or Claude Code adds research and form-filling assistance.
 
-**Current limitation:** automatic preparation supports US full-time roles for a **June 2027 graduation**. Other graduation dates need manual review and changes to the matching rules. This is not yet a general-purpose application service for every candidate.
+Choose your actual career stage, experience and graduation/start dates in **Start here**. Matching uses those saved choices rather than the creator’s personal career targets.
 
 ### 1. Install the basics once
 
@@ -202,42 +124,36 @@ npm run build
 npm start
 ```
 
-During setup:
-
-1. Enter the full path to your résumé PDF, including the filename. On macOS you can copy a file's path from Finder. Use the original PDF; setup will not rewrite it.
-2. Choose **SQLite** for the easiest start. SQLite is a database stored on your computer and needs no account or server setup.
-3. Keep the suggested port, **4317**, unless another app already uses it.
+Setup asks for the full path to your original résumé PDF, including its filename. On macOS you can copy the path from Finder. It preserves the PDF and uses **local SQLite by default**, with no database account or storage choice required. Existing configuration and backend selections are kept. The default port is **4317**.
 
 `doctor` checks your setup and reports missing requirements. On the first run it may report that the app has not been built; the next command, `npm run build`, handles that. Fix any Node, résumé or database errors before continuing. Setup will not overwrite an existing configuration.
 
 Open [your dashboard at 127.0.0.1:4317](http://127.0.0.1:4317). This address works only while the app is running on your computer.
 
-- **Your profile:** enter your own contact details, graduation date, verified experience and exact reusable answers. Confirm work authorization yourself.
-- **Settings:** choose role priorities, a compensation minimum, and whether the minimum means base salary or total compensation.
+- **Start here:** save contact details, career stage, job interests, locations, workplace preferences, compensation policy and separate work authorization answers. Use your actual graduation date when relevant.
+- **Your profile / Settings:** update saved details and verified experience later.
+- **Review queue:** answer missing questions together, review exact packets and approve a batch.
 - **Applications:** filter saved roles and review the evidence. Employer sponsorship history is not confirmation for a specific role.
 - **Opportunities:** add a job posting or refresh configured public employer feeds. An empty list is normal until jobs are imported or feeds are configured.
 - **About:** find the creator's background, LinkedIn, GitHub and source links. You can reopen it directly with `?view=about`.
 
 Your private files live in `.data/` and `.env.local`. They are excluded from Git. **GitHub stores the code, not your application records.** Keep a private backup if you need to restore your history later.
 
-### 5. Use Codex or Claude Code
+### 5. Let your assistant work
 
-Open the `career-agent-public` folder in Codex, or open your installed Claude Code session in that folder. In the dashboard's left panel, choose your assistant and click **Continue with agent**. Copy the instruction into that assistant's chat.
-
-Selecting an assistant does **not** connect an account or start an agent. Both assistants read the repository's project instructions and shared application skill. Browser and email access must be provided by your own agent tools or MCP servers. An MCP server is a tool connection that lets your assistant use a service; none is needed merely to track jobs locally.
-
-For a first request, paste:
+Open this project folder in Codex or Claude Code. In the dashboard, choose your assistant and copy the generated preparation instruction into its chat. You can also say:
 
 ```text
-Use the job-application-agent skill in this repository. Check my saved profile
-and application history. Help prepare jobs that match my preferences.
-Preserve my original documents. Ask for missing facts instead of guessing.
-Leave employer forms ready for my review. Do not submit or start automations.
+Use the job-application-agent skill and continue from my saved dashboard.
+Search and complete application preparation; put missing personal answers
+in Needs answers and continue the other jobs. Leave final Submit for review.
 ```
 
-If browser or email tools are unavailable, use manual tracking and have the assistant prepare answers for you to copy. A saved packet is not proof that an employer form has been filled.
+The shared skill reads a compact work queue and saved preferences. It researches employers, inspects live forms, prepares sourced answers and fills the forms its browser can handle. You do not need to name companies, configure feeds or write a detailed plan first.
 
-See [agent setup](docs/AGENT_SETUP.md) for the exact Codex and Claude instructions. Use [connections](docs/CONNECTIONS.md) if you want your own Supabase database or browser/email MCP tools. Supabase is optional; beginners should start with SQLite.
+When a batch is ready, review its exact answers and documents on the dashboard. Approve the packets you want and copy the submission instruction into the assistant's chat. This authorizes that specific batch; changed contents require another review. The assistant records confirmation evidence and identifies any job requiring your action.
+
+The assistant selector generates instructions; it does **not** connect accounts or launch a background worker. Actual form work uses your own assistant's browser tools. If those are unavailable, the assistant prepares saved answers and records a manual handoff. See [agent setup](docs/AGENT_SETUP.md) and [connections](docs/CONNECTIONS.md) when a tool needs connecting. SQLite needs no external service; Supabase is optional.
 
 ### Open the app again later
 
@@ -266,14 +182,12 @@ For more help, read [troubleshooting](docs/TROUBLESHOOTING.md). When reporting a
 
 ## Your daily workflow
 
-1. **Confirm your profile.** Store only facts and exact answers you have verified.
-2. **Check previous applications.** Inspect actual receipts or candidate-account status; alerts are not submissions.
-3. **Discover and research.** Refresh public feeds or import a posting. Verify cohort, employment type, compensation, and sponsorship.
-4. **Prepare a packet.** Inspect the actual hosted form and resolve required answers and upload choices.
-5. **Review.** Check the packet and live form. Submit yourself by default. Explicit agent submission also requires a current dashboard-approved packet and a request to execute that batch.
-6. **Record the result.** Save actual confirmation evidence. An uncertain result must be reconciled before retrying.
+1. **Continue from saved choices.** Copy the dashboard's preparation instruction into your assistant chat. It checks previous applications and researches suitable jobs.
+2. **Answer only what's missing.** Use **Review queue → Needs answers** for personal choices the assistant cannot source; it continues other jobs.
+3. **Review and approve.** Check the exact answers, documents and employer form. Copy the approved batch's submission instruction, or submit yourself.
+4. **Check results.** Confirmations, unknown outcomes and handoffs appear in history. An uncertain result must be reconciled before retrying.
 
-Ordinary new preparation is capped at **20/day**, shared across runs using the Chicago day boundary. Explicit one-day manual allowances can raise the limit to 50; they do not authorize submission. Scheduling is separate, opt-in agent/host configuration. A stored automation identifier is not proof that a scheduler is running.
+Ordinary new preparation is capped at **20/day**, shared across runs using the Chicago day boundary. Explicit one-day manual allowances can raise the limit to 50; they do not authorize submission. Scheduling is separate and opt-in. Scheduled discovery/preparation never submits, even when an older batch is approved.
 
 ## Architecture at a glance
 
@@ -319,7 +233,7 @@ See [architecture](docs/ARCHITECTURE.md) and [design decisions](docs/DESIGN_DECI
 - [Report a bug](https://github.com/AdiRosenstock/career-agent-public/issues/new?template=bug_report.yml): describe what you tried and what went wrong.
 - [Suggest an improvement](https://github.com/AdiRosenstock/career-agent-public/issues/new?template=feature_request.yml): tell us what would make applying easier.
 - Improve confusing instructions, accessibility, filters, or the interface.
-- Build and test support for more graduation dates, countries, and agent tools.
+- Build and test support for more countries, employer controls and agent tools.
 
 For code or documentation changes, read [Contributing](CONTRIBUTING.md). Fork the project, make your change, and open a pull request so it can be reviewed before it becomes part of the app. For a large change, open an issue first to discuss the approach. Use fictional examples; never share your résumé, application history, passwords or private screenshots.
 
@@ -374,6 +288,7 @@ requirements need separate confirmed eligibility; work authorization alone does
 not establish them.
 
 Choose your own employer boards in Settings. Feeds support Greenhouse, Lever and
-Ashby. Workday and other unsupported postings can be added with **Add a job** by
-pasting the employer URL, title, location and description. The app still targets
-US full-time graduate/entry-level roles in the 2027 cohort.
+Ashby. Workday and other postings without a public feed can be added with **Add a job** by
+pasting the employer URL, title, location and description. The agent can complete
+these forms through its browser when the actual controls are supported and the exact packet is reviewed and approved. Saved career stage,
+experience and graduation dates control US full-time matching.

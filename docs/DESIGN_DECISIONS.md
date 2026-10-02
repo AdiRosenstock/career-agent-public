@@ -68,7 +68,7 @@ A useful portfolio project lets a reader inspect engineering decisions and run a
 
 ## Next engineering directions
 
-- Generalize cohort/country matching beyond the current 2027 US rules, with eligibility tests.
+- Extend matching beyond US full-time roles, with country-specific eligibility tests.
 - Split the large UI modules into feature components as the interface grows.
 - Add reliable site-specific form adapters only with explicit scope and browser validation.
 - Introduce schema-versioned incremental persistence if state size becomes a bottleneck.

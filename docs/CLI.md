@@ -4,8 +4,10 @@ Use `npm run agent -- help` for the executable contract and the [payload example
 
 | Command | Effect |
 |---|---|
-| `state`, `jobs`, `packet ID`, `prior-applications` | Query state; outputs can contain private data |
-| `prompt accounts`, `prompt prepare [--provider codex|claude]` | Generate workflow text for Codex |
+| `work [--limit N] [--offset N] [--batch BATCH_ID]` | Default compact agent read: setup gaps, bounded actionable work, shared missing questions, counts and remaining quota; optional approved-batch focus |
+| `profile`, `job ID`, `packet ID`, `approved BATCH_ID` | Read exact profile, job or approved application contents only when needed |
+| `state`, `jobs`, `prior-applications` | Diagnostic/full reads; outputs can contain private data |
+| `prompt accounts`, `prompt prepare [--provider codex\|claude]`, `prompt submit BATCH_ID` | Generate short workflow instructions for the selected agent |
 | `import-job --file FILE` | Fetch/import an ATS posting or sourced manual job |
 | `job-put --file FILE`, `job-inspect ID --file FILE` | Save typed job evidence / fully inspected controls |
 | `refresh ID` | Fetch current supported posting; preserve unchanged local evidence |
@@ -21,14 +23,19 @@ Use `npm run agent -- help` for the executable contract and the [payload example
 | `preparation-allowance --limit 50 --reason TEXT` | Record explicit one-day manual allowance; not submission permission |
 | `prepare JOB_ID --allowance ID --file FILE` | Prepare using that day's allowance |
 | `packet-edit ID --file FILE` | Edit answers/documents/notes; revoke old approval |
-| `approved BATCH_ID` | Read exact approved packets; approval happens in dashboard |
-| `handoff PACKET_ID --evidence TEXT` | Record browser/manual work and limitations |
+| `handoff PACKET_ID --evidence TEXT` | Record a blocked browser step requiring user action |
 | `begin PACKET_ID` | Validate approved packet and persist attempt/lock before final browser action |
 | `finish ATTEMPT_ID --outcome submitted\|failed\|unknown\|handoff --evidence TEXT` | Save actual outcome; optional `--url URL` |
 | `recover ATTEMPT_ID --evidence TEXT` | Convert interrupted attempt to unknown; not a retry |
 | `reconcile ATTEMPT_ID --outcome submitted\|failed --evidence TEXT` | Resolve unknown from actual employer evidence |
 | `export [FILE]` | Write private backup JSON; PDFs remain separate |
 | `import-backup FILE` | Restore into empty destination after document verification |
+
+## Normal agent loop
+
+Start with `npm run agent -- work`, or add `--limit 5` for a smaller queue. Read `packet ID` only for the application being worked on. Save newly inspected form controls with `job-inspect`, and sourced answers or unresolved personal questions with `packet-edit`. The dashboard groups exact missing questions under **Review queue → Needs answers**; the agent should continue other jobs while answers are pending.
+
+`prepare-next` refreshes public feeds and creates initial drafts within the remaining daily cap; it does not inspect or fill every live form. Supplement it with employer research. For submission, read `work --batch BATCH_ID` and `approved BATCH_ID`, then recheck each actual form and call `begin` immediately before final Submit. Approval happens only on the dashboard. These CLI commands save records; browser tools perform actual employer interactions.
 
 Prefer structured private files over interpolating untrusted page text into shell commands. Do not include credentials, candidate-account tokens, government IDs or unrelated mail.
 
@@ -56,6 +63,6 @@ Register the original supporting PDF, then choose its returned document ID and S
 
 ## HTTP surface
 
-`server/index.ts` defines the loopback API. `/api/state` returns a snapshot, `/api/health` checks service availability, `/api/resume` and `/api/documents/:id` deliver hash-verified originals. `/api/export` also writes a local backup. `/api/helper-export` downloads a full portable bundle with confirmed answers and job references; unlike the basic extension export, it includes sensitive declarations and must remain private. It contains no approval authority or backend credentials.
+`server/index.ts` defines the loopback API. `/api/work` returns a bounded work index; `/api/onboarding` saves profile and preferences atomically. `/api/state` returns a snapshot, `/api/health` checks service availability, `/api/resume` and `/api/documents/:id` deliver hash-verified originals. `/api/export` also writes a local backup. `/api/helper-export` downloads a full portable bundle with confirmed answers and job references; unlike the basic extension export, it includes sensitive declarations and must remain private. It contains no approval authority or backend credentials.
 
 `npm run setup` creates private first-run configuration without overwriting existing settings. `npm run doctor` checks local prerequisites without opening application state. `/api/agent-prompt?mode=prepare&provider=claude` generates Claude instructions; `/api/codex-prompt` remains a compatibility alias. The Assistant selector changes generated prompt syntax, not the storage backend.

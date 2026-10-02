@@ -12,12 +12,12 @@ After inspecting all actual form controls:
 {"questions":[{"id":"first_name","label":"First Name","required":true,"type":"input_text"},{"id":"resume","label":"Resume","required":true,"type":"input_file"}]}
 ```
 
-Packet edit (use real fact IDs from `state`; this is only a shape example):
+Packet edit (use real fact IDs from the relevant `packet ID` or a focused profile read; this is only a shape example):
 ```json
 {"answers":[{"questionId":"first_name","question":"First Name","answer":"Alex","factIds":["name"],"confirmed":true}],"coverLetter":"","notes":"Hosted form inspected; required questions recorded."}
 ```
 
-For a manual job, inspect `shared/types.ts` and an existing job from `state`, then save a complete sourced Job via `job-put`. Explicitly set fetched time, open/closed/unknown status, question inspection state, and sponsorship evidence. Do not claim a manual import has been verified until the employer page has been read.
+For a manual job, inspect `shared/types.ts` and an existing job from `packet ID`, then save a complete sourced Job via `job-put`. Explicitly set fetched time, open/closed/unknown status, question inspection state, and sponsorship evidence. Do not claim a manual import has been verified until the employer page has been read.
 
 To resume a user-approved batch: `approved BATCH_ID`, `packet PACKET_ID`, `refresh JOB_ID`, `job-inspect JOB_ID --file FILE`, then `begin PACKET_ID` immediately before the final submission action. `begin` returns the attempt identifier; pass that identifier to `finish`.
 
