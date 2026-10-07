@@ -182,7 +182,7 @@ function selfIdentificationQuestion(label: string): boolean {
 function reusableSelfIdentificationChoice(q: FormQuestion, answer: string): boolean {
  return !selfIdentificationQuestion(q.label) || (
   /select|radio|single|dropdown/i.test(q.type)
-  && !/multi|check|array/i.test(q.type + ' ' + q.label)
+  && !/multi_select|checkbox|check_box|array|mark all that apply|select all that apply/i.test(q.type + ' ' + q.label)
   && !!q.options?.includes(answer)
  );
 }
@@ -270,7 +270,7 @@ function supportedAnswer(s: AppState, answer: Answer, question: FormQuestion): b
  if (answerShapeMatchesField(answer.questionId, answer.question, answer.answer) && exactSaved(s, answer.question, answer.answer)) return true;
  const derived = confirmedProfileAnswer(s, { id: answer.questionId, label: answer.question, required: true, type: 'text' });
  if (derived?.answer.trim().toLowerCase() === answer.answer.trim().toLowerCase()) return true;
- if (/authoriz|sponsor|visa|citizen|gender|ethnic|race\b|racial|hispanic|latino|sexual orientation|transgender|veteran|disabil|age range|pronoun/i.test(answer.question)) return false;
+ if (/authoriz|sponsor|visa|citizen|gender|ethnic|race\b|racial|hispanic|latino|sexual orientation|transgender|veteran|disabil|age range|pronoun|licens|registr|credential|certif|clearance|export|criminal|convict|felon|misdemeanor|background|disciplin|bond|lien|judg/i.test(answer.question)) return false;
  if (/^(?:legal|preferred) (?:first |last )?name$/i.test(answer.question.trim().replace(/\s*\*$/, ''))) return false;
  if (linkedinQuestion.test(answer.question.trim()) && answer.answer === s.profile.linkedin) return true;
  if (githubQuestion.test(answer.question.trim()) && answer.answer === s.profile.github) return true;

@@ -164,7 +164,7 @@ test('self-identification answers reuse only exact single-choice controls and ne
  ] });
  const questions = [
   { id: 'ethnicity-exact', label: 'Are you Hispanic/Latino?', required: true, type: 'single_select', options: ['Yes', 'No', "I don't wish to answer"] },
-  { id: 'gender-exact', label: 'Gender', required: true, type: 'select', options: ['Female', 'Male', "I don't wish to answer"] },
+  { id: 'gender-exact', label: 'Gender', required: true, type: 'multi_value_single_select', options: ['Female', 'Male', "I don't wish to answer"] },
   { id: 'ethnicity-wording', label: 'Are you Hispanic or Latino?', required: true, type: 'single_select', options: ['Yes', 'No'] },
   { id: 'veteran-different', label: 'Are you a veteran or active member of the United States Armed Forces?', required: true, type: 'single_select', options: ['Yes', 'No'] },
   { id: 'gender-multi', label: 'Gender', required: true, type: 'multi_select', options: ["I don't wish to answer", 'Male'] },
@@ -178,6 +178,19 @@ test('self-identification answers reuse only exact single-choice controls and ne
  assert.equal(packet.status, 'needs_input');
  await engine.editPacket(packet.id, { answers: [{ questionId: 'gender-multi', question: 'Gender', answer: "I don't wish to answer", factIds: [], confirmed: true }] });
  assert.ok((await engine.snapshot()).packets.find(item => item.id === packet.id)?.unresolved.some(reason => reason.includes('Gender')));
+});
+
+test('regulatory disclosures cannot be inferred from unrelated confirmed facts', async t => {
+ const { engine } = await fixture(t);
+ const label = 'Have you ever been disciplined by a regulatory authority?';
+ await engine.upsertJob(job('regulatory-disclosure', { questions: [{ id: 'discipline', label, required: true, type: 'select', options: ['Yes', 'No'] }] }));
+ const packet = await engine.prepare('regulatory-disclosure');
+ await engine.editPacket(packet.id, { answers: [{ questionId: 'discipline', question: label, answer: 'No', factIds: ['education'], confirmed: true }] });
+ assert.equal((await engine.snapshot()).packets.find(item => item.id === packet.id)?.status, 'needs_input');
+ await engine.updateProfile({ savedAnswers: [{ id: 'discipline', question: label, answer: 'No', confirmedAt: iso }] });
+ const confirmed = (await engine.snapshot()).packets.find(item => item.id === packet.id)!;
+ assert.equal(confirmed.answers.find(answer => answer.questionId === 'discipline')?.answer, 'No');
+ assert.equal(confirmed.status, 'ready');
 });
 
 test('confirmed profile answers fill only unambiguous authorization, sponsorship, relocation and location questions', async t => {

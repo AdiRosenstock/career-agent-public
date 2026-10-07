@@ -13,7 +13,7 @@ test('saved intake refreshes clean values, preserves dirty edits, and keeps city
  const { createRoot } = await import('react-dom/client'); const root = createRoot(dom.window.document.getElementById('root')!);
  t.after(async () => { await act(async () => root.unmount()); dom.window.close(); globals.window = previous.window; globals.document = previous.document; globals.IS_REACT_ACT_ENVIRONMENT = previous.IS_REACT_ACT_ENVIRONMENT; if (previous.navigator) Object.defineProperty(globalThis, 'navigator', previous.navigator); else delete globals.navigator; });
  let state = {
-  profile: { name: 'Alex Example', email: 'alex@example.test', phone: '+1 202-555-0100', graduation: '', authorizationNow: true, authorizationAtStart: true, futureSponsorship: false, authorizationConfirmedAt: '2026-10-02T12:00:00Z', earliestStart: null, savedAnswers: [{ id: 'legacy-relocation', question: 'Are you willing to relocate?', answer: 'Yes', confirmedAt: '2026-10-02T12:00:00Z' }], resume: { filename: 'original.pdf' } },
+  profile: { name: 'Alex Example', email: 'alex@example.test', phone: '+1 202-555-0100', graduation: '', authorizationNow: true, authorizationAtStart: true, futureSponsorship: false, authorizationConfirmedAt: '2026-10-02T12:00:00Z', earliestStart: null, facts: [{ id: 'mechanical-projects', label: 'Mechanical project evidence', value: 'Designed and tested a student robot gripper in SolidWorks.', source: 'user:confirmed-dashboard', confirmed: true }], savedAnswers: [{ id: 'legacy-relocation', question: 'Are you willing to relocate?', answer: 'Yes', confirmedAt: '2026-10-02T12:00:00Z' }], resume: { filename: 'original.pdf' } },
   settings: { careerStage: 'early_career', careerTargetsConfirmed: true, rolePriority: ['design'], roleKeywords: [], preferredLocations: ['Chicago, IL', 'Austin, TX'], targetEmployers: ['Northstar Labs', 'Acme Health'], workplacePreference: 'any', minimumAnnualCompensation: 0, applicationPreferences: { writtenAnswers: 'draft', formFilling: 'agent', submission: 'review', confirmedAt: '2026-10-02T12:00:00Z', automaticRiskAccepted: false } },
   packets: [], approvals: [], jobs: [], attempts: [], meta: { resumeValid: true, workspace: 'synthetic-workspace' },
  } as unknown as AppSnapshot;
@@ -36,9 +36,15 @@ test('saved intake refreshes clean values, preserves dirty edits, and keeps city
  const select = Array.from(dom.window.document.querySelectorAll<HTMLSelectElement>('select')).find(element => element.closest('label')?.textContent?.includes('Workplace preference'))!;
  await act(async () => { select.value = 'remote'; select.dispatchEvent(new dom.window.Event('change', { bubbles: true })); });
  const selfId = (label: string) => Array.from(dom.window.document.querySelectorAll<HTMLSelectElement>('select')).find(element => element.closest('label')?.querySelector('span')?.textContent === label)!;
+ const startupSection = Array.from(dom.window.document.querySelectorAll<HTMLDetailsElement>('details')).find(element => element.querySelector('summary')?.textContent?.includes('Startups and product teams'))!;
+ startupSection.open = true;
+ const startupProject = startupSection.querySelector<HTMLTextAreaElement>('textarea')!;
+ await act(async () => { Object.getOwnPropertyDescriptor(dom.window.HTMLTextAreaElement.prototype, 'value')!.set!.call(startupProject, 'Shipped a scheduling feature used by 200 customers.'); startupProject.dispatchEvent(new dom.window.Event('input', { bubbles: true })); });
+ assert.equal(startupSection.open, true, 'An opened industry section stays open while its answer is edited');
  assert.equal(selfId('Gender').value, '', 'Optional self-identification starts unanswered');
  await act(async () => { selfId('Gender').value = "I don't wish to answer"; selfId('Gender').dispatchEvent(new dom.window.Event('change', { bubbles: true })); });
  await act(async () => { selfId('Hispanic or Latino').value = 'Yes'; selfId('Hispanic or Latino').dispatchEvent(new dom.window.Event('change', { bubbles: true })); });
+ await act(async () => { selfId('Ever held an insurance or securities industry license').value = 'No'; selfId('Ever held an insurance or securities industry license').dispatchEvent(new dom.window.Event('change', { bubbles: true })); });
  state = { ...state, settings: { ...state.settings, workplacePreference: 'hybrid' } }; await render();
  assert.equal(select.value, 'remote', 'Refresh must preserve a current unsaved choice');
  await act(async () => dom.window.document.querySelector('form')!.dispatchEvent(new dom.window.Event('submit', { bubbles: true, cancelable: true })));
@@ -47,5 +53,8 @@ test('saved intake refreshes clean values, preserves dirty edits, and keeps city
  assert.equal(saved?.profile.savedAnswers?.some(answer => answer.question === 'Are you willing to relocate?'), false, 'Legacy aliases must not conflict with new preferences');
  assert.equal(saved?.profile.savedAnswers?.find(answer => answer.question === 'Gender')?.answer, "I don't wish to answer");
  assert.equal(saved?.profile.savedAnswers?.find(answer => answer.question === 'Are you Hispanic/Latino?')?.answer, 'Yes');
+ assert.equal(saved?.profile.savedAnswers?.find(answer => answer.question === 'Have you ever been licensed in the insurance or securities industry?')?.answer, 'No');
  assert.equal(saved?.profile.savedAnswers?.some(answer => answer.question === 'Sexual Orientation'), false, 'Unanswered sensitive questions are not saved');
+ assert.equal(saved?.profile.facts?.find(fact => fact.id === 'mechanical-projects')?.value, 'Designed and tested a student robot gripper in SolidWorks.');
+ assert.equal(saved?.profile.facts?.find(fact => fact.id === 'startup-products')?.value, 'Shipped a scheduling feature used by 200 customers.');
 });

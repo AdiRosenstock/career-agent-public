@@ -248,7 +248,7 @@ function SharedAnswerBank({ packets, jobs, busy, save }: { packets: ApplicationP
   for (const question of job?.questions || []) {
    if (!question.required || /(?:^|\|)(?:input_)?file(?:\||$)/i.test(question.type.replace(/\s/g, ''))) continue;
    if (/^(?:location|start date(?: month| year)?|end date(?: month| year)?|degree|school|job location|preferred office)$/i.test(question.label.trim())) continue;
-   if (/consent|agree|acknowledge|certif|terms|privacy|signature|arbitration|background check|disabil|veteran|gender|race|racial|ethnic|hispanic|latino|sexual orientation|transgender|age range|pronoun|citizen|nationality|export/i.test(question.label)) continue;
+   if (/consent|agree|acknowledge|certif|terms|privacy|signature|arbitration|background check|criminal|convict|felon|misdemeanor|disciplin|bond|lien|judg|licens|registr|clearance|security|disabil|veteran|gender|race|racial|ethnic|hispanic|latino|sexual orientation|transgender|age range|pronoun|citizen|nationality|export/i.test(question.label)) continue;
    if (!packet.unresolved.includes(`Required answer missing or unconfirmed: ${question.label}`)) continue;
    const options = question.options || [];
    const key = `${question.label}\u0000${JSON.stringify(options)}`;
