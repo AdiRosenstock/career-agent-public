@@ -193,6 +193,20 @@ test('regulatory disclosures cannot be inferred from unrelated confirmed facts',
  assert.equal(confirmed.status, 'ready');
 });
 
+test('age and current student screening need exact candidate-confirmed answers', async t => {
+ const { engine } = await fixture(t);
+ const questions = [
+  { id: 'age', label: 'Are you at least 18 years or older?', required: true, type: 'select', options: ['Yes', 'No'] },
+  { id: 'student', label: 'Are you currently a full-time student?', required: true, type: 'select', options: ['Yes', 'No'] },
+ ];
+ await engine.upsertJob(job('screening', { questions }));
+ const packet = await engine.prepare('screening');
+ await engine.editPacket(packet.id, { answers: questions.map(question => ({ questionId: question.id, question: question.label, answer: question.id === 'age' ? 'Yes' : 'No', factIds: ['education'], confirmed: true })) });
+ assert.equal((await engine.snapshot()).packets.find(item => item.id === packet.id)?.status, 'needs_input');
+ await engine.updateProfile({ savedAnswers: questions.map(question => ({ id: question.id, question: question.label, answer: question.id === 'age' ? 'Yes' : 'No', confirmedAt: iso })) });
+ assert.equal((await engine.snapshot()).packets.find(item => item.id === packet.id)?.status, 'ready');
+});
+
 test('confirmed profile answers fill only unambiguous authorization, sponsorship, relocation and location questions', async t => {
  const { engine } = await fixture(t);
  await engine.updateProfile({ authorizationNow: true, authorizationAtStart: true, futureSponsorship: true, authorizationConfirmedAt: iso,

@@ -4424,6 +4424,13 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 .start-intake-heading { padding-bottom:24px; }
 .start-intake-heading h2 { font-size:23px; letter-spacing:-.5px; }
 .start-intake-heading p,.start-ready p { max-width:68ch; line-height:1.65; color:#637189; font-size:14px; margin-top:9px; }
+.start-intake-map { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; margin:0 0 22px; }
+.start-intake-map a { display:grid; gap:3px; padding:12px 14px; border:1px solid #dce4f0; border-radius:7px; color:#304866; text-decoration:none; background:#fbfcff; }
+.start-intake-map a:hover,.start-intake-map a:focus-visible { border-color:#668de0; outline:2px solid #235ad6; outline-offset:2px; }
+.start-intake-map a strong { font-size:13px; line-height:1.4; }
+.start-intake-map a span { color:#637189; font-size:11px; line-height:1.45; }
+.start-intake-map .start-intake-map-identity { border-color:#a9c4ec; background:#f0f6ff; }
+.start-intake [id^="start-"] { scroll-margin-top:26px; }
 .start-intake fieldset { border:0; border-top:1px solid var(--line); padding:24px 0 9px; margin:0; min-width:0; }
 .start-intake legend { float:left; width:100%; font-size:17px; font-weight:650; color:var(--ink); padding:0; margin-bottom:19px; }
 .start-intake legend + * { clear:both; }
@@ -4442,6 +4449,13 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 .start-optional summary { padding:19px 0; cursor:pointer; font-size:15px; font-weight:600; line-height:1.5; }
 .start-optional summary span { font-weight:400; color:#637189; font-size:12px; margin-left:8px; }
 .start-optional-body { padding:3px 0 2px; }
+.start-search-priorities { margin-bottom:18px; }
+.start-self-id-group { border-top:1px solid #dce4f0; padding:17px 0 2px; }
+.start-self-id-group h3,.start-background-facts h3 { color:#304866; font-size:14px; margin:0 0 10px; }
+.start-self-id-group .start-field-note { margin:0 0 14px; }
+.start-self-id-group a { color:#235ad6; }
+.start-background-facts { border-top:1px solid var(--line); padding-top:20px; margin-top:4px; }
+.start-intake fieldset.start-self-id { border-left:3px solid #668de0; padding-left:18px; margin:15px 0 18px; }
 .start-save { display:flex; justify-content:space-between; align-items:center; gap:20px; padding-top:20px; margin-top:5px; border-top:1px solid var(--line); }
 .start-save p { display:flex; gap:8px; align-items:center; font-size:12px; line-height:1.5; color:#637189; }
 .start-save p svg { flex-shrink:0; }
@@ -4466,6 +4480,8 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 .start-action-row .button { min-height:42px; }
 .start-action-help { font-size:13px; line-height:1.7; max-width:80ch; color:#465b78; margin-bottom:13px; }
 .start-actions > .button.text { color:#235ad6; font-size:13px; }
+.start-edit-actions { display:flex; flex-wrap:wrap; gap:10px 22px; }
+.start-edit-actions .button.text { color:#235ad6; font-size:13px; padding-left:0; }
 @media(max-width:1150px) { .start-intake-layout { grid-template-columns:minmax(0,1fr); gap:20px; } .start-checklist { position:static; padding:0 3px; } .start-checklist ul { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0 20px; } }
 @media(max-width:760px) { .start-document-grid { grid-template-columns:1fr; } .start-document-card p { min-height:0; } }
-@media(max-width:620px) { .start-documents { padding:22px 18px; } .start-intake { padding:22px 18px; } .start-intake-heading h2 { font-size:21px; } .start-intake .form-grid { grid-template-columns:1fr; } .start-role-choices { grid-template-columns:1fr; } .start-save { flex-direction:column; align-items:stretch; gap:13px; } .start-actions { padding:20px 18px; } .start-ready { gap:10px; } .start-ready h2 { font-size:18px; } .start-action-row { flex-direction:column; align-items:stretch; } .start-checklist ul { grid-template-columns:1fr; } }
+@media(max-width:620px) { .start-documents { padding:22px 18px; } .start-intake { padding:22px 18px; } .start-intake-heading h2 { font-size:21px; } .start-intake-map { grid-template-columns:1fr; } .start-intake .form-grid { grid-template-columns:1fr; } .start-role-choices { grid-template-columns:1fr; } .start-save { flex-direction:column; align-items:stretch; gap:13px; } .start-actions { padding:20px 18px; } .start-ready { gap:10px; } .start-ready h2 { font-size:18px; } .start-action-row { flex-direction:column; align-items:stretch; } .start-checklist ul { grid-template-columns:1fr; } }

@@ -29,6 +29,11 @@ test('saved intake refreshes clean values, preserves dirty edits, and keeps city
  state = { ...state, profile: { ...state.profile, name: 'Updated Example' } }; await render();
  const buttons = () => Array.from(dom.window.document.querySelectorAll('button'));
  await act(async () => buttons().find(button => button.textContent === 'Edit my saved preferences')!.click());
+ assert.equal(dom.window.document.querySelector<HTMLAnchorElement>('.start-intake-map-identity')?.getAttribute('href'), '#start-self-id');
+ assert.equal(dom.window.document.querySelector<HTMLDetailsElement>('#start-search-priorities')?.open, true, 'Search priorities are visible during onboarding');
+ const identitySection = dom.window.document.querySelector<HTMLElement>('#start-self-id')!;
+ assert.ok(identitySection.compareDocumentPosition(dom.window.document.querySelector('#start-background')!) & dom.window.Node.DOCUMENT_POSITION_FOLLOWING, 'Voluntary identity appears before the long background bank');
+ assert.equal(identitySection.querySelector('h3')?.textContent, 'Veteran and military service');
  const name = dom.window.document.querySelector<HTMLInputElement>('input[autocomplete="name"]')!;
  assert.equal(name.value, 'Updated Example', 'Clean editor must read the newest profile');
  const locationInput = Array.from(dom.window.document.querySelectorAll<HTMLInputElement>('input')).find(input => input.placeholder.includes('Chicago'))!;
@@ -44,7 +49,11 @@ test('saved intake refreshes clean values, preserves dirty edits, and keeps city
  assert.equal(selfId('Gender').value, '', 'Optional self-identification starts unanswered');
  await act(async () => { selfId('Gender').value = "I don't wish to answer"; selfId('Gender').dispatchEvent(new dom.window.Event('change', { bubbles: true })); });
  await act(async () => { selfId('Hispanic or Latino').value = 'Yes'; selfId('Hispanic or Latino').dispatchEvent(new dom.window.Event('change', { bubbles: true })); });
+ await act(async () => { selfId('Protected veteran status').value = 'I am not a protected veteran'; selfId('Protected veteran status').dispatchEvent(new dom.window.Event('change', { bubbles: true })); });
+ await act(async () => { selfId('Currently a full-time student').value = 'No'; selfId('Currently a full-time student').dispatchEvent(new dom.window.Event('change', { bubbles: true })); });
  await act(async () => { selfId('Ever held an insurance or securities industry license').value = 'No'; selfId('Ever held an insurance or securities industry license').dispatchEvent(new dom.window.Event('change', { bubbles: true })); });
+ const educationHistory = Array.from(dom.window.document.querySelectorAll<HTMLTextAreaElement>('#start-background textarea')).find(element => element.closest('label')?.textContent?.includes('List your schools'))!;
+ await act(async () => { Object.getOwnPropertyDescriptor(dom.window.HTMLTextAreaElement.prototype, 'value')!.set!.call(educationHistory, 'Midwest University, BS Mechanical Engineering, Chicago, 08/2022–05/2026.'); educationHistory.dispatchEvent(new dom.window.Event('input', { bubbles: true })); });
  state = { ...state, settings: { ...state.settings, workplacePreference: 'hybrid' } }; await render();
  assert.equal(select.value, 'remote', 'Refresh must preserve a current unsaved choice');
  await act(async () => dom.window.document.querySelector('form')!.dispatchEvent(new dom.window.Event('submit', { bubbles: true, cancelable: true })));
@@ -53,8 +62,11 @@ test('saved intake refreshes clean values, preserves dirty edits, and keeps city
  assert.equal(saved?.profile.savedAnswers?.some(answer => answer.question === 'Are you willing to relocate?'), false, 'Legacy aliases must not conflict with new preferences');
  assert.equal(saved?.profile.savedAnswers?.find(answer => answer.question === 'Gender')?.answer, "I don't wish to answer");
  assert.equal(saved?.profile.savedAnswers?.find(answer => answer.question === 'Are you Hispanic/Latino?')?.answer, 'Yes');
+ assert.equal(saved?.profile.savedAnswers?.find(answer => answer.question === 'Veteran Status')?.answer, 'I am not a protected veteran');
+ assert.equal(saved?.profile.savedAnswers?.find(answer => answer.question === 'Are you currently a full-time student?')?.answer, 'No');
  assert.equal(saved?.profile.savedAnswers?.find(answer => answer.question === 'Have you ever been licensed in the insurance or securities industry?')?.answer, 'No');
  assert.equal(saved?.profile.savedAnswers?.some(answer => answer.question === 'Sexual Orientation'), false, 'Unanswered sensitive questions are not saved');
  assert.equal(saved?.profile.facts?.find(fact => fact.id === 'mechanical-projects')?.value, 'Designed and tested a student robot gripper in SolidWorks.');
  assert.equal(saved?.profile.facts?.find(fact => fact.id === 'startup-products')?.value, 'Shipped a scheduling feature used by 200 customers.');
+ assert.equal(saved?.profile.facts?.find(fact => fact.id === 'education-history')?.value, 'Midwest University, BS Mechanical Engineering, Chicago, 08/2022–05/2026.');
 });

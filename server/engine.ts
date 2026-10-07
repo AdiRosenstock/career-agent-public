@@ -270,7 +270,7 @@ function supportedAnswer(s: AppState, answer: Answer, question: FormQuestion): b
  if (answerShapeMatchesField(answer.questionId, answer.question, answer.answer) && exactSaved(s, answer.question, answer.answer)) return true;
  const derived = confirmedProfileAnswer(s, { id: answer.questionId, label: answer.question, required: true, type: 'text' });
  if (derived?.answer.trim().toLowerCase() === answer.answer.trim().toLowerCase()) return true;
- if (/authoriz|sponsor|visa|citizen|gender|ethnic|race\b|racial|hispanic|latino|sexual orientation|transgender|veteran|disabil|age range|pronoun|licens|registr|credential|certif|clearance|export|criminal|convict|felon|misdemeanor|background|disciplin|bond|lien|judg/i.test(answer.question)) return false;
+ if (/authoriz|sponsor|visa|citizen|gender|ethnic|race\b|racial|hispanic|latino|sexual orientation|transgender|veteran|disabil|\bage\b|18 years|(?:currently|presently) (?:a )?(?:full.time )?student|pronoun|licens|registr|credential|certif|clearance|export|criminal|convict|felon|misdemeanor|background|disciplin|bond|lien|judg/i.test(answer.question)) return false;
  if (/^(?:legal|preferred) (?:first |last )?name$/i.test(answer.question.trim().replace(/\s*\*$/, ''))) return false;
  if (linkedinQuestion.test(answer.question.trim()) && answer.answer === s.profile.linkedin) return true;
  if (githubQuestion.test(answer.question.trim()) && answer.answer === s.profile.github) return true;
