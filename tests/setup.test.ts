@@ -22,3 +22,11 @@ test('setup rejects invalid documents, backend choices and credential-bearing se
  await assert.rejects(configureWorkspace({directory:dir,resume,backend:'supabase',supabaseUrl:'https://user:secret@example.test'}),/without credentials/);
  assert.deepEqual(await readdir(dir),['original.pdf']);
 });
+
+test('setup can defer résumé selection to the dashboard', async t => {
+ const dir=await mkdtemp(path.join(tmpdir(),'career-setup-dashboard-'));t.after(()=>rm(dir,{recursive:true,force:true}));
+ await configureWorkspace({directory:dir});
+ const config=await readFile(path.join(dir,'.env.local'),'utf8');
+ assert.match(config,/CAREER_BACKEND=sqlite/);
+ assert.doesNotMatch(config,/CAREER_RESUME_PATH/);
+});

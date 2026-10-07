@@ -4,7 +4,7 @@
 |---|---|
 | Port 4317 is unreachable | Run `npm start` in the clone; inspect startup errors; check `PORT` |
 | Native SQLite dependency fails to install | Use supported Node 22 and `npm ci`; ensure a native build toolchain if no prebuilt binary is available |
-| Fresh startup requests a résumé | Set `CAREER_RESUME_PATH` to a readable original PDF in `.env.local` |
+| No résumé in a new workspace | Add the original PDF in Start here, or set `CAREER_RESUME_PATH` before first launch |
 | PDF is empty/truncated | Download/hydrate cloud-placeholder files locally; do not regenerate the document |
 | Résumé checksum fails | Restore the unchanged selected file or explicitly use `resume-update` for a new original |
 | Blank profile | Expected for a fresh install; confirm your own facts rather than copying demo data |

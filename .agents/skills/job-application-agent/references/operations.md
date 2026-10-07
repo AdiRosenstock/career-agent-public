@@ -36,25 +36,27 @@ When the user asks for forms ready for review, perform actual browser filling an
 
 Preserve supplied PDF bytes and original upload filenames. Use the app's recorded hash verification immediately before an upload; a checksum mismatch is a blocker, not a reason to replace the saved checksum. Keep the original résumé unchanged. An explicit résumé replacement uses `resume-update` and invalidates affected approvals; preserve previous captured copies.
 
-Register supporting PDFs using `document-add --file`. Their roles come from candidate instructions and accepted employer fields. Save the exact question ID, returned document ID and SHA-256 in packet attachments. A recommendation is not automatically a cover letter, and a transcript must match the degree level requested. Do not attach a recommendation/transcript unless the field accepts it and the exact attachment choice has been reviewed and approved. Never silently substitute files.
+Register supporting PDFs using `document-add --file`. Their roles come from candidate instructions and accepted employer fields. Save the exact question ID, returned document ID and SHA-256 in packet attachments. A recommendation is not automatically a cover letter, and a transcript must match the degree level requested. Do not attach a recommendation/transcript unless the field accepts it and the exact attachment choice is current in the packet; review mode additionally requires dashboard approval. Never silently substitute files.
+
+The candidate can upload a base cover letter PDF in Start here. It is reference material for drafting, never a selectable packet attachment. Verify its contents before reuse and keep job-specific claims and addresses tailored to the actual employer.
 
 Check each transcript's actual document date. A recent-transcript requirement needs an acceptable copy or explicit confirmation that the employer accepts the available one. Do not overwrite a newer résumé GPA with an older transcript's GPA. Keep student IDs and unrelated academic details out of profile summaries and letters. Create a cover letter only when required, with source-supported facts, in the employer's accepted format.
 
-## Approval integrity
+## Submission integrity
 
-The dashboard records user approval. Agents may read approval but cannot create it through endpoints, direct storage edits or fabricated timestamps. `approved BATCH_ID` supplies the exact approved jobs, packet contents and document choices. No substitutions. Recheck each live posting/form before use; content edits and changed requirements require fresh approval.
+The dashboard records review-mode approval. Agents may read approval but cannot create it through endpoints, direct storage edits or fabricated timestamps. `approved BATCH_ID` supplies the exact approved jobs, packet contents and document choices. Automatic mode instead requires the candidate's saved risk acknowledgment and a complete unchanged ready packet. No substitutions. Recheck each live posting/form before use; content edits and changed requirements require resolution, plus fresh approval in review mode.
 
-Approved declarations still need the browser tool's required action-time confirmation for legal attestations, signatures and binding agreements. Do not infer them as ordinary fields. Missing or changed consent choices go back to the candidate through the dashboard or a precise manual step when the dashboard cannot capture the control. Continue unaffected approved applications.
+Declarations still need the browser tool's required action-time confirmation for legal attestations, signatures and binding agreements. Do not infer them as ordinary fields. Missing or changed consent choices go back to the candidate through the dashboard or a precise manual step when the dashboard cannot capture the control. Continue unaffected applications.
 
 Ordinary preparation stays within the persistent 20/day cap. `preparation-allowance` requires an explicit user request for a one-day manual batch, can raise the allowance to 50, and never authorizes submission. Do not use it to compensate for unsuitable jobs or enlarge scheduled runs. A stored automation ID is not proof of an active scheduler; no scheduling request authorizes submissions.
 
 ## Submission outcomes
 
-Call `begin` immediately before any action finalizing an application; it validates freshness, approval hashes, résumé/supporting documents, sponsorship, prior history and the global browser lock before persisting the attempt. A validation failure forbids the final action. Only one application is in progress at a time.
+Call `begin` immediately before any action finalizing an application; it validates freshness, the selected submission mode, packet integrity, résumé/supporting documents, sponsorship, prior history and the global browser lock before persisting the attempt. A validation failure forbids the final action. Only one application is in progress at a time.
 
 Click Submit once. Explicit employer success text or candidate status confirming submission is required for `finish --outcome submitted`; save the identifying text, timestamp and confirmation URL. Filled fields, a button click, generic navigation or an email alert alone are not success evidence.
 
-A timeout, lost session, ambiguous response or crash after submission is `unknown`, never an immediate retry. Save `finish --outcome unknown` or use `recover` for an interrupted `in_progress` attempt. Check actual employer confirmation/status before `reconcile`. A verified validation failure showing nothing was submitted can be marked failed; subsequent submission still needs valid approval. Report confirmed submissions, unknown outcomes, failures and handoffs accurately and separately.
+A timeout, lost session, ambiguous response or crash after submission is `unknown`, never an immediate retry. Save `finish --outcome unknown` or use `recover` for an interrupted `in_progress` attempt. Check actual employer confirmation/status before `reconcile`. A verified validation failure showing nothing was submitted can be marked failed; a subsequent submission still needs a complete current packet and review-mode approval when selected. Report confirmed submissions, unknown outcomes, failures and handoffs accurately and separately.
 
 ## Data and capability limits
 

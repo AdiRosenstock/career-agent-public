@@ -32,11 +32,25 @@ export function verifiedResumeBytes(resume: Resume): Buffer {
 /** Explicitly replace the active résumé; never rewrite source PDFs or older copies. */
 export async function registerResume(rt: Runtime, dataDirectory: string, file: string) {
  if (!file?.trim()) throw new Error('Provide the new résumé PDF path.');
- const source = path.resolve(file); const bytes = readPdf(source); const sha256 = digest(bytes);
+ const source = path.resolve(file); const bytes = readPdf(source);
+ return captureResume(rt, dataDirectory, path.basename(source), bytes, source);
+}
+
+export async function registerResumeUpload(rt: Runtime, dataDirectory: string, filename: string, base64: string) {
+ if (!filename || path.basename(filename) !== filename || /[\\/\x00-\x1f]/.test(filename) || !/\.pdf$/i.test(filename) || filename.length > 255) throw new Error('Choose a PDF file with a valid filename.');
+ if (!base64 || base64.length > 28_000_000 || !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(base64)) throw new Error('The uploaded PDF is invalid or exceeds 20 MB.');
+ const bytes = Buffer.from(base64, 'base64');
+ if (bytes.length < 5 || bytes.length > 20 * 1024 * 1024 || bytes.subarray(0, 5).toString('ascii') !== '%PDF-') throw new Error('Choose a complete PDF under 20 MB.');
+ return captureResume(rt, dataDirectory, filename, bytes);
+}
+
+async function captureResume(rt: Runtime, dataDirectory: string, filename: string, bytes: Buffer, source?: string) {
+ const sha256 = digest(bytes);
  const previous = (await rt.store.read()).profile.resume;
  const directory = path.join(dataDirectory, 'artifacts', 'resumes');
  await mkdir(directory, { recursive: true, mode: 0o700 }); await chmod(directory, 0o700);
- const resume: Resume = { path: path.join(directory, `resume-${sha256}.pdf`), originalPath: source, filename: path.basename(source), sha256 };
+ const target = path.join(directory, `resume-${sha256}.pdf`);
+ const resume: Resume = { path: target, originalPath: source ?? target, filename, sha256 };
  try { await writeFile(resume.path, bytes, { flag: 'wx', mode: 0o600 }); }
  catch (error) { if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error; }
  // Existing content-addressed copies must verify; never overwrite a corrupt one.

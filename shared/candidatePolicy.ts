@@ -25,5 +25,7 @@ export function matchesTargets(job: Job, settings: Settings): boolean {
 }
 export function priorityRank(job: Job, settings: Settings): number {
  const rank = settings.rolePriority.indexOf(job.roleFamily);
- return rank < 0 ? settings.rolePriority.length : rank;
+ const employer = job.company.trim().toLowerCase().replace(/\b(?:inc|llc|corp|corporation|ltd)\.?\b/g, '').replace(/[^a-z0-9]/g, '');
+ const preferred = (settings.targetEmployers || []).some(name => name.trim().toLowerCase().replace(/\b(?:inc|llc|corp|corporation|ltd)\.?\b/g, '').replace(/[^a-z0-9]/g, '') === employer);
+ return (rank < 0 ? settings.rolePriority.length : rank) * 2 + (preferred ? 0 : 1);
 }

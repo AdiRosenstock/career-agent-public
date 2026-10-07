@@ -8,12 +8,12 @@ The server loads `.env.local` from the repository root. Explicit process environ
 |---|---|
 | `CAREER_BACKEND` | `sqlite`; only `sqlite` or `supabase` accepted |
 | `CAREER_DATA_DIR` | Repository `.data`; use a dedicated private absolute directory to override |
-| `CAREER_RESUME_PATH` | Original PDF path needed for a fresh database; an existing store owns its résumé metadata |
+| `CAREER_RESUME_PATH` | Optional original PDF path for setup; otherwise add it in Start here. An existing store owns its résumé metadata. |
 | `PORT` | 4317, bound to 127.0.0.1 |
 | `SUPABASE_URL` | Server-only project URL when Supabase selected |
 | `SUPABASE_SECRET_KEY` | Server-only service credential; legacy `SUPABASE_SERVICE_ROLE_KEY` supported |
 
-A new database has a blank profile, default employer boards, a 20/day limit and Chicago day boundary. The initial seed does not impose a compensation minimum. Settings can select a minimum and base/total basis. Cohort/role rules currently specialize in 2027 US graduates and are partly encoded in the matching logic, UI and agent prompts.
+A new database has a blank profile, default employer boards, a 20/day limit and Chicago day boundary. The initial seed does not impose a compensation minimum; entering 0 also disables the floor. Settings can select a minimum and base/total basis. Matching uses the saved career stage, experience and graduation month for US full-time roles.
 
 ## File layout
 

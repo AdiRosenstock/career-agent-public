@@ -18,7 +18,12 @@ if (backend === 'sqlite') {
 try { await access(path.join(root, '.env.local')); check(true, 'Private .env.local exists.'); } catch { check(false, 'No .env.local. Run npm run setup or provide configuration through your environment.'); }
 const dataDir = path.resolve(process.env.CAREER_DATA_DIR || path.join(root,'.data'));
 const resume = process.env.CAREER_RESUME_PATH || path.join(dataDir,'artifacts','resume.pdf');
-try { const f = await open(resume, 'r'); try { const b=Buffer.alloc(4); const {bytesRead}=await f.read(b,0,4,0); check(bytesRead===4 && b.toString()==='%PDF', 'Résumé source is readable PDF bytes. Stored document hashes are checked by the app.'); } finally {await f.close();} } catch {check(false,'Résumé source missing/unreadable. Set CAREER_RESUME_PATH to your own original PDF. Existing database metadata remains authoritative.');}
+if (!process.env.CAREER_RESUME_PATH) {
+  try { const f=await open(resume,'r'); try { const b=Buffer.alloc(4); const {bytesRead}=await f.read(b,0,4,0); check(bytesRead===4&&b.toString()==='%PDF','Stored résumé is readable PDF bytes.'); } finally {await f.close();} }
+  catch { console.log('INFO  Add your original résumé PDF in Start here after launching the dashboard.'); }
+} else {
+  try { const f = await open(resume, 'r'); try { const b=Buffer.alloc(4); const {bytesRead}=await f.read(b,0,4,0); check(bytesRead===4 && b.toString()==='%PDF', 'Résumé source is readable PDF bytes. Stored document hashes are checked by the app.'); } finally {await f.close();} } catch {check(false,'Configured résumé source missing/unreadable. Fix CAREER_RESUME_PATH or add the PDF on the dashboard if the workspace already exists.');}
+}
 for (const file of ['AGENTS.md','CLAUDE.md','.agents/skills/job-application-agent/SKILL.md','.claude/skills/job-application-agent/SKILL.md']) { try { await access(path.join(root,file)); check(true, `${file} available.`); } catch {check(false, `${file} missing.`);} }
 try {await access(path.join(root,'dist/index.html'));check(true,'Dashboard build exists.');} catch {check(false,'No dashboard build. Run npm run build.');}
 console.log('No application database opened, files changed, accounts connected, or automation started. Browser/email availability must be checked inside your chosen agent.');

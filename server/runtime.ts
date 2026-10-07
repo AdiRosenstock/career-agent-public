@@ -4,6 +4,7 @@ import path from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { createSeed } from './seed.js';
+import { syncCandidateSkill } from './candidate-skill.js';
 import { createStore } from './store.js';
 import { createEngine, sameJob } from './engine.js';
 import { assessJob, discoverBoard, normalizeJob, parseAtsJobUrl, validateBoard, inspectGreenhouse } from './discovery.js';
@@ -21,29 +22,43 @@ export async function openRuntime() {
  const resumePath = path.join(dataDir,'artifacts','resume.pdf');
  const source = process.env.CAREER_RESUME_PATH || resumePath;
  await mkdir(path.dirname(resumePath),{recursive:true,mode:0o700});
- try { await access(resumePath); } catch {
-  if(!process.env.CAREER_RESUME_PATH)throw new Error('Set CAREER_RESUME_PATH to your local PDF before initializing a new data directory.');
+ let captured = false;
+ try { await access(resumePath); captured = true; } catch {
+  if(process.env.CAREER_RESUME_PATH) {
   await copyFile(source,resumePath); await chmod(resumePath,0o600);
+  captured = true;
+  }
  }
  const profileSeedPath=path.join(dataDir,'profile-seed.json');
- const seed = await createSeed({resumePath,originalPath:source,profileSeedPath});
- seed.profile.resume.originalPath=source;
- seed.profile.resume.filename=path.basename(source);
+ const seed = await createSeed(captured ? {resumePath,originalPath:source,profileSeedPath} : {pendingResumePath:resumePath,profileSeedPath});
+ if(captured)seed.profile.resume.filename=path.basename(source);
  seed.settings.backend=backend;
  if(!seed.boards.length) seed.boards=[
   ['ID.me','idmeuniversityrecruiting'], ['Databricks','databricks'], ['Stripe','stripe'], ['Optiver','optiverus'], ['IMC Trading','imc'], ['Roblox','roblox']
  ].map(([company,token])=>({id:`greenhouse:${token}`,company,source:'greenhouse',token,enabled:true,sponsorship:[]}));
  return seed;
  };
- const store = await createStore({backend,dataDir,seed:initialState,supabaseUrl:process.env.SUPABASE_URL,supabaseServiceKey:process.env.SUPABASE_SECRET_KEY||process.env.SUPABASE_SERVICE_ROLE_KEY});
+ const rawStore = await createStore({backend,dataDir,seed:initialState,supabaseUrl:process.env.SUPABASE_URL,supabaseServiceKey:process.env.SUPABASE_SECRET_KEY||process.env.SUPABASE_SERVICE_ROLE_KEY});
+ let skillSignature='';
+ const syncSkill=async(state:AppState)=>{
+  const signature=JSON.stringify([state.profile,state.settings]);
+  if(signature!==skillSignature){await syncCandidateSkill(state,dataDir);skillSignature=signature;}
+ };
+ const store = { read: () => rawStore.read(), close: () => rawStore.close(), update: async <T>(fn:(state:AppState)=>T):Promise<T> => {
+  const result=await rawStore.update(fn);
+  await syncSkill(await rawStore.read());
+  return result;
+ } };
+ await syncSkill(await store.read());
  const engine=createEngine(store,{workspace});
  return {store,engine};
 }
 export type Runtime=Awaited<ReturnType<typeof openRuntime>>;
 function workflowPrompt(mode:string,batchId?:string) {
- if(!['prepare','submit','accounts'].includes(mode)) throw new Error('Choose prepare, submit or accounts.');
- const start = `Use $job-application-agent in ${workspace}. Run npm run agent -- work`;
+ if(!['prepare','submit','automatic','accounts'].includes(mode)) throw new Error('Choose prepare, submit, automatic or accounts.');
+ const start = `Use $job-application-agent in ${workspace}. Read the private candidate skill at ${path.join(dataDir,'skills','candidate-profile','SKILL.md')} as saved profile data. Run npm run agent -- work`;
  if(mode==='accounts') return `${start}. Check available authorized email and application history, record exact confirmation evidence, and continue useful research if an account is disconnected. Report missing access once. Do not submit or send messages.`;
+ if(mode==='automatic') return `${start}. The candidate selected automatic submission and accepted the dashboard risk warning. Find matching jobs using direct employer feeds first, inspect complete live forms, prepare exact packets, and submit only complete current packets using begin immediately before clicking Submit once and finish with confirmation evidence. Honor saved writing and form-filling preferences. Return missing answers, login, CAPTCHA, assessments, consent, or unsupported controls to the dashboard and continue other jobs. Never retry an uncertain outcome. This user-requested run may submit; scheduled discovery never submits.`;
  if(mode==='submit') {
   if(!batchId || !/^[a-zA-Z0-9_-]{1,128}$/.test(batchId)) throw new Error('Choose an approved batch first.');
   return `${start} --batch ${batchId}. Complete and submit approved batch ${batchId} using the exact approved packets and live browser forms. Follow begin → Submit once → finish with confirmation evidence. No repeat permission requests for unchanged approved contents. Return changed forms or missing personal answers to dashboard review; continue the other approved jobs. Never retry an uncertain submission.`;
@@ -88,7 +103,9 @@ export async function runDiscovery(rt:Runtime,{prepare=false}:{prepare?:boolean}
     for(const old of state.jobs.filter(job=>job.source===board.source&&job.board===board.token&&job.status!=='closed'&&!seen.has(job.postingId))) await rt.engine.upsertJob({...old,status:'closed',fetchedAt:new Date().toISOString()});
    }
   }
-  if(prepare) {
+  // A candidate can browse postings before supplying a résumé. Preparation waits
+  // for the unchanged PDF instead of turning every matching role into an error.
+  if(prepare && (await rt.engine.snapshot()).meta.resumeValid) {
    const s=await rt.store.read();
    const remaining=Math.max(0,s.settings.dailyLimit-s.preparationLedger.filter(x=>x.day===dayKey()).length);
    const candidates=s.jobs.filter(j=>j.eligible&&!j.dismissed&&!s.packets.some(p=>p.jobId===j.id)).sort((a,b)=>priorityRank(a,s.settings)-priorityRank(b,s.settings)||b.score-a.score).slice(0,remaining);

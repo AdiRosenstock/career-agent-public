@@ -102,6 +102,7 @@ test('source evidence remains attributable, and a disabled policy never blocks',
   assert.equal(result.sourceUrl, listing.sourceUrl); assert.equal(result.checkedAt, listing.fetchedAt);
   assert.match(result.excerpt, /110,000/);
   assert.deepEqual(compensationEligibilityReasons(job('No pay disclosure.'), null, 'base'), []);
+  assert.deepEqual(compensationEligibilityReasons(job('No pay disclosure.'), 0, 'base'), [], 'A zero floor means no minimum, including when pay is undisclosed');
   assert.equal(assessCompensation(listing, null, 'base').min, 110_000);
   assert.equal(assessCompensation(listing, null, 'base').status, 'unknown');
   assert.match(compensationEligibilityReasons(job('No pay disclosure.'), 100_000, 'base')[0], /^Compensation: /);

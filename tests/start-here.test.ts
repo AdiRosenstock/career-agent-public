@@ -14,12 +14,18 @@ test('saved intake refreshes clean values, preserves dirty edits, and keeps city
  t.after(async () => { await act(async () => root.unmount()); dom.window.close(); globals.window = previous.window; globals.document = previous.document; globals.IS_REACT_ACT_ENVIRONMENT = previous.IS_REACT_ACT_ENVIRONMENT; if (previous.navigator) Object.defineProperty(globalThis, 'navigator', previous.navigator); else delete globals.navigator; });
  let state = {
   profile: { name: 'Alex Example', email: 'alex@example.test', phone: '+1 202-555-0100', graduation: '', authorizationNow: true, authorizationAtStart: true, futureSponsorship: false, authorizationConfirmedAt: '2026-10-02T12:00:00Z', earliestStart: null, savedAnswers: [{ id: 'legacy-relocation', question: 'Are you willing to relocate?', answer: 'Yes', confirmedAt: '2026-10-02T12:00:00Z' }], resume: { filename: 'original.pdf' } },
-  settings: { careerStage: 'early_career', careerTargetsConfirmed: true, rolePriority: ['design'], roleKeywords: [], preferredLocations: ['Chicago, IL', 'Austin, TX'], workplacePreference: 'any', minimumAnnualCompensation: 0 },
+  settings: { careerStage: 'early_career', careerTargetsConfirmed: true, rolePriority: ['design'], roleKeywords: [], preferredLocations: ['Chicago, IL', 'Austin, TX'], targetEmployers: ['Northstar Labs', 'Acme Health'], workplacePreference: 'any', minimumAnnualCompensation: 0, applicationPreferences: { writtenAnswers: 'draft', formFilling: 'agent', submission: 'review', confirmedAt: '2026-10-02T12:00:00Z', automaticRiskAccepted: false } },
   packets: [], approvals: [], jobs: [], attempts: [], meta: { resumeValid: true, workspace: 'synthetic-workspace' },
  } as unknown as AppSnapshot;
  let saved: { profile: Partial<CandidateProfile>; settings: Partial<Settings> } | undefined;
- const render = async () => { await act(async () => root.render(createElement(StartHere, { state, busy: false, save: async body => { saved = body; return true; }, prepare: () => {}, submit: () => {}, review: () => {}, profile: () => {} }))); };
+ let searches = 0;
+ const render = async () => { await act(async () => root.render(createElement(StartHere, { state, busy: false, save: async body => { saved = body; return true; }, search: () => { searches++; }, prepare: () => {}, applyAutomatically: () => {}, submit: () => {}, review: () => {}, uploadResume: async () => true, uploadDocument: async () => true }))); };
  await render();
+ const documentSection = dom.window.document.querySelector('#start-documents')!;
+ assert.ok(documentSection.compareDocumentPosition(dom.window.document.querySelector('.start-actions')!) & dom.window.Node.DOCUMENT_POSITION_FOLLOWING, 'Documents should be the first setup section');
+ assert.deepEqual(Array.from(documentSection.querySelectorAll<HTMLInputElement>('input[type=file]')).map(input => input.getAttribute('aria-label')), ['Replace original résumé PDF', 'Base cover letter PDF', 'Academic transcript PDF']);
+ await act(async () => Array.from(dom.window.document.querySelectorAll('button')).find(button => button.textContent?.includes('Search employer feeds now'))!.click());
+ assert.equal(searches,1,'Start here must launch dashboard discovery directly');
  state = { ...state, profile: { ...state.profile, name: 'Updated Example' } }; await render();
  const buttons = () => Array.from(dom.window.document.querySelectorAll('button'));
  await act(async () => buttons().find(button => button.textContent === 'Edit my saved preferences')!.click());
@@ -29,10 +35,17 @@ test('saved intake refreshes clean values, preserves dirty edits, and keeps city
  assert.equal(locationInput.value, 'Chicago, IL; Austin, TX');
  const select = Array.from(dom.window.document.querySelectorAll<HTMLSelectElement>('select')).find(element => element.closest('label')?.textContent?.includes('Workplace preference'))!;
  await act(async () => { select.value = 'remote'; select.dispatchEvent(new dom.window.Event('change', { bubbles: true })); });
+ const selfId = (label: string) => Array.from(dom.window.document.querySelectorAll<HTMLSelectElement>('select')).find(element => element.closest('label')?.querySelector('span')?.textContent === label)!;
+ assert.equal(selfId('Gender').value, '', 'Optional self-identification starts unanswered');
+ await act(async () => { selfId('Gender').value = "I don't wish to answer"; selfId('Gender').dispatchEvent(new dom.window.Event('change', { bubbles: true })); });
+ await act(async () => { selfId('Hispanic or Latino').value = 'Yes'; selfId('Hispanic or Latino').dispatchEvent(new dom.window.Event('change', { bubbles: true })); });
  state = { ...state, settings: { ...state.settings, workplacePreference: 'hybrid' } }; await render();
  assert.equal(select.value, 'remote', 'Refresh must preserve a current unsaved choice');
  await act(async () => dom.window.document.querySelector('form')!.dispatchEvent(new dom.window.Event('submit', { bubbles: true, cancelable: true })));
- assert.equal(saved?.profile.name, 'Updated Example'); assert.deepEqual(saved?.settings.preferredLocations, ['Chicago, IL', 'Austin, TX']); assert.equal(saved?.settings.workplacePreference, 'remote');
+ assert.equal(saved?.profile.name, 'Updated Example'); assert.deepEqual(saved?.settings.preferredLocations, ['Chicago, IL', 'Austin, TX']); assert.deepEqual(saved?.settings.targetEmployers, ['Northstar Labs', 'Acme Health']); assert.equal(saved?.settings.workplacePreference, 'remote');
  assert.equal(saved?.profile.savedAnswers?.find(answer => answer.question === 'Are you open to relocation?')?.answer, 'Yes');
  assert.equal(saved?.profile.savedAnswers?.some(answer => answer.question === 'Are you willing to relocate?'), false, 'Legacy aliases must not conflict with new preferences');
+ assert.equal(saved?.profile.savedAnswers?.find(answer => answer.question === 'Gender')?.answer, "I don't wish to answer");
+ assert.equal(saved?.profile.savedAnswers?.find(answer => answer.question === 'Are you Hispanic/Latino?')?.answer, 'Yes');
+ assert.equal(saved?.profile.savedAnswers?.some(answer => answer.question === 'Sexual Orientation'), false, 'Unanswered sensitive questions are not saved');
 });

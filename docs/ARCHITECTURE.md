@@ -71,7 +71,7 @@ flowchart LR
     A -->|Content change| D
 ```
 
-This diagram is conceptual; enum and command contracts are in `shared/types.ts` and `server/cli.ts`. A manual handoff is recorded separately. The engine blocks preparation/submission on invalid documents, uncertain duplicate identity, unmet eligibility, incomplete inspection or required answers. Content edits invalidate old approvals. Refresh is required before executing an approved submission; unchanged refresh can preserve approval.
+This diagram is conceptual; enum and command contracts are in `shared/types.ts` and `server/cli.ts`. A manual handoff is recorded separately. The engine blocks preparation/submission on invalid documents, uncertain duplicate identity, unmet eligibility, incomplete inspection or required answers. Content edits invalidate old approvals. Review mode needs exact current approval; automatic mode needs dashboard risk acknowledgment and an unchanged ready packet. Refresh is required before either submission path.
 
 Submission uses a global one-application lock and records an attempt before the final browser action. Interrupted or uncertain attempts are not retried automatically. They require reconciliation from actual employer evidence. Persisted discovery leases prevent overlapping runs and recover stale interrupted work.
 
@@ -91,7 +91,7 @@ ATS pages, emails, PDFs and repositories are untrusted evidence. They cannot aut
 
 ## Storage choices and compatibility
 
-SQLite is the default. Supabase is explicitly selected; outages fail without fallback. Existing stores are authoritative, so an updated bootstrap profile cannot overwrite a candidate. Fresh installations use a generic internal résumé basename and retain the original source filename in metadata. Existing résumé paths remain unchanged.
+SQLite is the default. Supabase is explicitly selected; outages fail without fallback. Existing stores are authoritative, so an updated bootstrap profile cannot overwrite a candidate. A fresh workspace can open before a résumé is added; preparation waits for an unchanged, verified PDF. Dashboard uploads use content-addressed private copies and retain the original filename in metadata. Existing résumé paths remain unchanged.
 
 Supabase cover-letter bodies are saved locally by integrity reference. All PDFs remain local for either backend. `supabase/chrome-helper.sql` defines an optional, separate owner-scoped helper table; it is not an active extension sync feature. The shipped extension only uses local browser storage.
 

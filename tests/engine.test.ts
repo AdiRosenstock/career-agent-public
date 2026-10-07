@@ -155,6 +155,31 @@ test('a saved answer is not inserted into a form whose options exclude it', asyn
  assert.equal(revised.status, 'needs_input');
 });
 
+test('self-identification answers reuse only exact single-choice controls and never cross question meanings', async t => {
+ const { engine } = await fixture(t);
+ await engine.updateProfile({ savedAnswers: [
+  { id: 'hispanic', question: 'Are you Hispanic/Latino?', answer: 'Yes', confirmedAt: iso },
+  { id: 'gender', question: 'Gender', answer: "I don't wish to answer", confirmedAt: iso },
+  { id: 'veteran', question: 'Veteran Status', answer: 'I am not a protected veteran', confirmedAt: iso },
+ ] });
+ const questions = [
+  { id: 'ethnicity-exact', label: 'Are you Hispanic/Latino?', required: true, type: 'single_select', options: ['Yes', 'No', "I don't wish to answer"] },
+  { id: 'gender-exact', label: 'Gender', required: true, type: 'select', options: ['Female', 'Male', "I don't wish to answer"] },
+  { id: 'ethnicity-wording', label: 'Are you Hispanic or Latino?', required: true, type: 'single_select', options: ['Yes', 'No'] },
+  { id: 'veteran-different', label: 'Are you a veteran or active member of the United States Armed Forces?', required: true, type: 'single_select', options: ['Yes', 'No'] },
+  { id: 'gender-multi', label: 'Gender', required: true, type: 'multi_select', options: ["I don't wish to answer", 'Male'] },
+  { id: 'gender-unknown', label: 'Gender', required: true, type: 'text' },
+  { id: 'gender-choice-missing', label: 'Gender', required: true, type: 'select', options: ['Female', 'Male'] },
+ ];
+ await engine.upsertJob(job('self-id', { questions }));
+ const packet = await engine.prepare('self-id');
+ assert.deepEqual(packet.answers.map(answer => answer.questionId), ['ethnicity-exact', 'gender-exact']);
+ assert.equal(packet.answers.find(answer => answer.questionId === 'ethnicity-exact')?.answer, 'Yes');
+ assert.equal(packet.status, 'needs_input');
+ await engine.editPacket(packet.id, { answers: [{ questionId: 'gender-multi', question: 'Gender', answer: "I don't wish to answer", factIds: [], confirmed: true }] });
+ assert.ok((await engine.snapshot()).packets.find(item => item.id === packet.id)?.unresolved.some(reason => reason.includes('Gender')));
+});
+
 test('confirmed profile answers fill only unambiguous authorization, sponsorship, relocation and location questions', async t => {
  const { engine } = await fixture(t);
  await engine.updateProfile({ authorizationNow: true, authorizationAtStart: true, futureSponsorship: true, authorizationConfirmedAt: iso,
@@ -294,6 +319,44 @@ test('rechecked identical sponsorship evidence does not invalidate approval', as
  await engine.beginSubmission(p.id);
 });
 
+test('automatic submission requires explicit risk acknowledgment and an unchanged ready packet', async t => {
+ const { engine, store } = await fixture(t);
+ const automatic = { writtenAnswers: 'draft', formFilling: 'agent', submission: 'automatic', confirmedAt: iso, automaticRiskAccepted: true } as const;
+ await assert.rejects(engine.updateSettings({ applicationPreferences: { ...automatic, automaticRiskAccepted: false } }), /risk/);
+ await engine.upsertJob(job('automatic'));
+ const packet = await engine.prepare('automatic');
+ await assert.rejects(engine.beginSubmission(packet.id), /current approval/);
+ await engine.updateSettings({ applicationPreferences: automatic });
+ const ready = (await engine.snapshot()).packets.find(item => item.id === packet.id)!;
+ assert.equal(ready.status, 'ready');
+ await store.update(state => { state.packets.find(item => item.id === packet.id)!.notes = 'Changed outside packet edit'; });
+ await assert.rejects(engine.beginSubmission(packet.id), /unchanged packet/);
+ await engine.editPacket(packet.id, { notes: 'Reviewed current packet' });
+ const attempt = await engine.beginSubmission(packet.id);
+ assert.match(attempt.batchId, /^automatic:/);
+});
+
+test('self submission mode prevents the agent from beginning a submission', async t => {
+ const { engine } = await fixture(t);
+ const packet = await approved(engine, 'self-mode');
+ await engine.updateSettings({ applicationPreferences: { writtenAnswers: 'self', formFilling: 'self', submission: 'self', confirmedAt: iso, automaticRiskAccepted: false } });
+ assert.equal((await engine.snapshot()).approvals[0].revokedAt, iso);
+ await assert.rejects(engine.beginSubmission(packet.id), /submit applications themselves/);
+});
+
+test('saved-only writing mode rejects a new narrative even when it cites a real profile fact', async t => {
+ const { engine } = await fixture(t);
+ const question = { id: 'essay', label: 'Why are you interested in this role?', required: true, type: 'textarea' };
+ await engine.upsertJob(job('saved-only', { questions: [...job().questions, question] }));
+ const initial = await engine.prepare('saved-only');
+ const packet = await engine.editPacket(initial.id, { answers: [...initial.answers, { questionId: question.id, question: question.label, answer: 'I have worked on Python and SQL projects.', factIds: ['education'], confirmed: true }] });
+ assert.equal(packet.status, 'ready', JSON.stringify(packet.unresolved));
+ await engine.updateSettings({ applicationPreferences: { writtenAnswers: 'saved_only', formFilling: 'agent', submission: 'review', confirmedAt: iso, automaticRiskAccepted: false } });
+ const changed = (await engine.snapshot()).packets.find(item => item.id === packet.id)!;
+ assert.equal(changed.status, 'needs_input');
+ assert.match(changed.unresolved.join(' '), /Confirm a sourced or saved exact answer/);
+});
+
 test('semantic query parameters distinguish separate requisitions on the same career page', async t => {
  const { engine } = await fixture(t);
  const first = job('query-1', { source: 'manual', postingId: '', title: 'Data Analyst 2027', applyUrl: 'https://example.com/careers?jobId=123&utm_source=board' });
@@ -305,6 +368,17 @@ test('Greenhouse input_file résumé uploads use the preserved original without 
  const { engine } = await fixture(t);
  await engine.upsertJob(job('file', { questions: [{ id: 'resume', label: 'Resume/CV', required: true, type: 'input_file' }] }));
  const p = await engine.prepare('file'); assert.equal(p.status, 'ready'); await engine.approve([p.id]);
+});
+
+test('base cover letter is reference material and cannot be attached as a generic document', async t => {
+ const { engine, dir } = await fixture(t);
+ const base = await document(dir, 'base_cover_letter', 'base-letter');
+ await engine.updateProfile({ documents: [base] });
+ await engine.upsertJob(job('reference-only', { questions: [...job().questions, { id: 'extra', label: 'Additional documents', required: false, type: 'input_file' }] }));
+ const packet = await engine.prepare('reference-only');
+ const edited = await engine.editPacket(packet.id, { attachments: [{ questionId: 'extra', documentId: base.id, sha256: base.sha256 }] });
+ assert.equal(edited.status, 'needs_input');
+ assert.match(edited.unresolved.join(' '), /does not match an accepted upload question/);
 });
 
 test('required transcript attachments cannot be satisfied by a confirmed plaintext answer', async t => {

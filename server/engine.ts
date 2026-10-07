@@ -147,6 +147,7 @@ function documentValid(document: CandidateDocument): boolean {
  } catch { return false; }
 }
 function documentAccepted(document: CandidateDocument, question: FormQuestion): boolean {
+ if (document.kind === 'base_cover_letter') return false;
  if (!isFileQuestion(question.type) || /resume|résumé|\bcv\b|cover\s*letter/i.test(question.label)) return false;
  if (/transcript|academic\s+record/i.test(question.label)) return document.kind === 'transcript';
  if (/recommendation|reference\s+letter|letter\s+of\s+reference/i.test(question.label)) return document.kind === 'recommendation';
@@ -174,6 +175,16 @@ function revoke(s: AppState, p: ApplicationPacket, at: string): void {
 }
 function exactSaved(s: AppState, question: string, answer?: string) {
  return s.profile.savedAnswers.find(x => textKey(x.question) === textKey(question) && (answer === undefined || x.answer === answer) && Number.isFinite(Date.parse(x.confirmedAt)));
+}
+function selfIdentificationQuestion(label: string): boolean {
+ return /\b(?:gender|ethnic(?:ity)?|race|racial|hispanic|latino|sexual orientation|transgender|veteran|disabilit(?:y|ies)|age range)\b/i.test(label);
+}
+function reusableSelfIdentificationChoice(q: FormQuestion, answer: string): boolean {
+ return !selfIdentificationQuestion(q.label) || (
+  /select|radio|single|dropdown/i.test(q.type)
+  && !/multi|check|array/i.test(q.type + ' ' + q.label)
+  && !!q.options?.includes(answer)
+ );
 }
 function answerShapeMatchesField(questionId: string, label: string, answer: string): boolean {
  if (/^start-month--\d+$/.test(questionId) && /^start date month$/i.test(label)) return /^(?:January|February|March|April|May|June|July|August|September|October|November|December)$/i.test(answer);
@@ -213,6 +224,14 @@ function confirmedProfileAnswer(s: AppState, q: FormQuestion): Answer | null {
  else if (/^(?:are you (?:willing|open) to (?:work|be|working)|would you be (?:open|willing) to work) (?:in[- ]office|in[- ]person|on[- ]?site)\??$/i.test(label)) answer = savedChoice(['Are you willing to work on site?', 'Are you willing to work onsite?']);
  else if (/^(?:phone country code|country \(phone dialing code\))$/i.test(label) && /^\+\d{1,3}$/.test(saved('Country (phone dialing code)') || '')) answer = saved('Country (phone dialing code)')!;
  else if (/^(?:city|what city do you live in\?)$/i.test(label) && saved('Location (City)')?.includes(',')) answer = saved('Location (City)')!.split(',')[0].trim();
+ else if (/^(?:city|current city|city of residence)$/i.test(label)) answer = saved('City');
+ else if (/^(?:state|state\/province|state or province|province)$/i.test(label)) answer = saved('State');
+ else if (/^(?:zip|zip code|postal code|zip\/postal code)$/i.test(label)) answer = saved('Postal Code');
+ else if (/^(?:school|university|school or university|college|college or university)$/i.test(label)) answer = saved('School or University');
+ else if (/^(?:degree|degree earned|degree type|highest degree)$/i.test(label)) answer = saved('Degree');
+ else if (/^(?:major|field of study|discipline)$/i.test(label)) answer = saved('Discipline');
+ else if (/^(?:gpa|overall gpa)$/i.test(label)) answer = saved('GPA:');
+ else if (/^(?:are you willing to travel(?: for work)?|are you open to travel|willing to travel)\??$/i.test(label)) answer = savedChoice(['Are you willing to travel for work?']);
  else if (/^(?:year of graduation|what is your expected graduation year\?)\s*$/i.test(label) && /^\d{4}-\d{2}$/.test(s.profile.graduation)) answer = s.profile.graduation.slice(0, 4);
  if (!answer || (q.options?.length && !q.options.includes(answer))) return null;
  return { questionId: q.id, question: q.label, answer, factIds, confirmed: true };
@@ -224,7 +243,7 @@ function generateAnswers(s: AppState, job: Job): Answer[] {
   const contact = coreContactAnswer(s, q);
   if (contact) return contact.answer.trim() && (!q.options?.length || q.options.includes(contact.answer)) ? [contact] : [];
   const saved = exactSaved(s, q.label);
-  if (saved && answerShapeMatchesField(q.id, q.label, saved.answer) && (!q.options?.length || q.options.includes(saved.answer))) return [{ questionId: q.id, question: q.label, answer: saved.answer, factIds: [], confirmed: true }];
+  if (saved && answerShapeMatchesField(q.id, q.label, saved.answer) && reusableSelfIdentificationChoice(q, saved.answer) && (!q.options?.length || q.options.includes(saved.answer))) return [{ questionId: q.id, question: q.label, answer: saved.answer, factIds: [], confirmed: true }];
   const confirmed = confirmedProfileAnswer(s, q);
   if (confirmed) return [confirmed];
   const label = q.label.trim().toLowerCase();
@@ -240,20 +259,22 @@ function fillConfirmedAnswers(s: AppState, p: ApplicationPacket, job: Job): void
  for (const answer of generated) {
   const existing = p.answers.find(item => item.questionId === answer.questionId);
   if (!existing) p.answers.push(answer);
-  else if (!existing.answer.trim() || !supportedAnswer(s, existing)) Object.assign(existing, answer);
+  else if (!existing.answer.trim() || !supportedAnswer(s, existing, job.questions.find(q => q.id === answer.questionId)!)) Object.assign(existing, answer);
  }
 }
-function supportedAnswer(s: AppState, answer: Answer): boolean {
+function supportedAnswer(s: AppState, answer: Answer, question: FormQuestion): boolean {
  if (!answer.confirmed || !answer.answer.trim()) return false;
+ if (!reusableSelfIdentificationChoice(question, answer.answer)) return false;
  const contact = coreContactAnswer(s, { id: answer.questionId, label: answer.question, required: true, type: 'text' });
  if (contact) return contact.confirmed && contact.answer === answer.answer;
  if (answerShapeMatchesField(answer.questionId, answer.question, answer.answer) && exactSaved(s, answer.question, answer.answer)) return true;
  const derived = confirmedProfileAnswer(s, { id: answer.questionId, label: answer.question, required: true, type: 'text' });
  if (derived?.answer.trim().toLowerCase() === answer.answer.trim().toLowerCase()) return true;
- if (/authoriz|sponsor|visa|citizen|gender|ethnic|race\b|veteran|disabil|pronoun/i.test(answer.question)) return false;
+ if (/authoriz|sponsor|visa|citizen|gender|ethnic|race\b|racial|hispanic|latino|sexual orientation|transgender|veteran|disabil|age range|pronoun/i.test(answer.question)) return false;
  if (/^(?:legal|preferred) (?:first |last )?name$/i.test(answer.question.trim().replace(/\s*\*$/, ''))) return false;
  if (linkedinQuestion.test(answer.question.trim()) && answer.answer === s.profile.linkedin) return true;
  if (githubQuestion.test(answer.question.trim()) && answer.answer === s.profile.github) return true;
+ if (s.settings.applicationPreferences?.writtenAnswers !== 'draft' && s.settings.applicationPreferences) return false;
  return answer.factIds.length > 0 && answer.factIds.every(id => s.profile.facts.some(f => f.id === id && f.confirmed && !!f.source));
 }
 function unresolved(s: AppState, p: ApplicationPacket, job: Job, now = new Date()): string[] {
@@ -268,7 +289,7 @@ function unresolved(s: AppState, p: ApplicationPacket, job: Job, now = new Date(
  for (const a of p.answers) {
   const q = job.questions.find(q => q.id === a.questionId);
   if (!questionIds.has(a.questionId) || q?.label !== a.question) problems.push(`Answer no longer matches current form: ${a.question}`);
-  else if (a.answer.trim() && !supportedAnswer(s, a)) problems.push(`Confirm a sourced or saved exact answer: ${a.question}`);
+  else if (a.answer.trim() && !supportedAnswer(s, a, q!)) problems.push(`Confirm a sourced or saved exact answer: ${a.question}`);
   else if (a.answer.trim() && q.options?.length && !q.options.includes(a.answer)) problems.push(`Choose an available option: ${q.label}`);
  }
  for (const q of job.questions.filter(q => q.required)) {
@@ -279,7 +300,7 @@ function unresolved(s: AppState, p: ApplicationPacket, job: Job, now = new Date(
    if (attachment && document && documentAccepted(document, q) && attachment.sha256 === document.sha256 && documentValid(document)) continue;
    problems.push(`Required attachment needs manual handling: ${q.label}`); continue;
   }
-  if (!p.answers.some(a => a.questionId === q.id && a.answer.trim() && supportedAnswer(s, a))) problems.push(`Required answer missing or unconfirmed: ${q.label}`);
+  if (!p.answers.some(a => a.questionId === q.id && a.answer.trim() && supportedAnswer(s, a, q))) problems.push(`Required answer missing or unconfirmed: ${q.label}`);
  }
  return [...new Set(problems)];
 }
@@ -321,6 +342,14 @@ function settingsPolicyChanged(s: AppState, patch: Partial<Settings>): boolean {
  return patch.careerStage !== undefined || patch.yearsExperience !== undefined || patch.rolePriority !== undefined || patch.roleKeywords !== undefined || (patch.minimumAnnualCompensation !== undefined && patch.minimumAnnualCompensation !== (s.settings.minimumAnnualCompensation ?? null)) || (patch.compensationBasis !== undefined && patch.compensationBasis !== (s.settings.compensationBasis ?? 'base'));
 }
 function validateSettingsPatch(s: AppState, patch: Partial<Settings>): void {
+ const preferences = patch.applicationPreferences;
+ if (preferences) {
+  if (!Number.isFinite(Date.parse(preferences.confirmedAt))) throw new AgentError('Confirm application preferences on the dashboard', 400);
+  if (preferences.submission === 'automatic' && !preferences.automaticRiskAccepted) throw new AgentError('Accept the automatic submission risk before saving this choice', 400);
+  if (preferences.submission !== 'automatic' && preferences.automaticRiskAccepted) throw new AgentError('Risk acceptance applies only to automatic submission', 400);
+  if (preferences.submission === 'automatic' && (preferences.formFilling !== 'agent' || preferences.writtenAnswers === 'self')) throw new AgentError('Automatic submission requires agent form filling and agent-prepared answers', 400);
+  if (s.attempts.some(a => a.outcome === 'in_progress')) throw new AgentError('Finish the active submission before changing application preferences');
+ }
  if (patch.backend && patch.backend !== s.settings.backend) throw new AgentError('Changing storage requires an explicit export/import and server restart');
  if (patch.timezone && patch.timezone !== 'America/Chicago') throw new AgentError('The daily ledger is fixed to America/Chicago');
  if (patch.dailyLimit !== undefined && (!Number.isInteger(patch.dailyLimit) || patch.dailyLimit < 1 || patch.dailyLimit > 20)) throw new AgentError('Daily preparation limit must be between 1 and 20', 400);
@@ -328,6 +357,8 @@ function validateSettingsPatch(s: AppState, patch: Partial<Settings>): void {
  if (patch.rolePriority && (new Set(patch.rolePriority).size !== patch.rolePriority.length || patch.rolePriority.some(role => !roleFamilies.includes(role)))) throw new AgentError('Choose distinct supported career tracks', 400);
  if (patch.roleKeywords && (patch.roleKeywords.length > 30 || patch.roleKeywords.some(term => typeof term !== 'string' || !term.trim() || term.length > 100))) throw new AgentError('Choose up to 30 role title terms', 400);
  if (patch.preferredLocations && (patch.preferredLocations.length > 30 || patch.preferredLocations.some(location => typeof location !== 'string' || !location.trim() || location.length > 200))) throw new AgentError('Choose up to 30 preferred locations', 400);
+ if (patch.targetEmployers && (patch.targetEmployers.length > 30 || patch.targetEmployers.some(employer => typeof employer !== 'string' || !employer.trim() || employer.length > 200))) throw new AgentError('Choose up to 30 employers to prioritize', 400);
+ if (patch.preferredCareerSites && (patch.preferredCareerSites.length > 20 || patch.preferredCareerSites.some(site => { try { const url = new URL(site); return url.protocol !== 'https:' || !!url.username || !!url.password || !!url.hash || site.length > 500; } catch { return true; } }))) throw new AgentError('Choose up to 20 HTTPS career page URLs without credentials or fragments', 400);
  if (patch.workplacePreference !== undefined && !['any', 'remote', 'hybrid', 'onsite'].includes(patch.workplacePreference)) throw new AgentError('Choose a supported workplace preference', 400);
  if (patch.careerStage !== undefined && !['new_grad','early_career','experienced'].includes(patch.careerStage)) throw new AgentError('Choose a supported experience level', 400);
  if (patch.yearsExperience !== undefined && patch.yearsExperience !== null && (!Number.isFinite(patch.yearsExperience) || patch.yearsExperience < 0 || patch.yearsExperience > 60)) throw new AgentError('Years of experience must be between 0 and 60', 400);
@@ -420,6 +451,7 @@ export function createEngine(store: Store, options: { workspace?: string; now?: 
   },
   async approve(packetIds: string[]): Promise<{ batchId: string; packetIds: string[]; prompt: string }> {
    return store.update(s => {
+    if (s.settings.applicationPreferences && s.settings.applicationPreferences.submission !== 'review') throw new AgentError('Choose dashboard approval mode before approving a batch');
     if (!packetIds.length || new Set(packetIds).size !== packetIds.length) throw new AgentError('Select one or more distinct packets', 400);
     requireResume(s); const batchId = randomUUID(); const approvedAt = now().toISOString();
     for (const id of packetIds) {
@@ -442,9 +474,14 @@ export function createEngine(store: Store, options: { workspace?: string; now?: 
     if (!isFresh(j.fetchedAt, now(), 24) || !isFresh(j.formInspectedAt, now(), 24)) throw new AgentError('Recheck the open posting and live application form within 24 hours before submitting');
     if (s.attempts.some(a => a.outcome === 'in_progress')) throw new AgentError('Another submission is in progress; reconcile it before starting another');
     if (s.attempts.some(a => sameJob(getJob(s, a.jobId), j) && ['submitted', 'unknown'].includes(a.outcome))) throw new AgentError('Existing submitted or unknown outcome must be reconciled; do not retry');
+    const preferences = s.settings.applicationPreferences;
+    if (preferences?.submission === 'self') throw new AgentError('The candidate chose to submit applications themselves');
+    const automatic = preferences?.submission === 'automatic' && preferences.automaticRiskAccepted && preferences.formFilling === 'agent' && preferences.writtenAnswers !== 'self';
     const approval = s.approvals.find(a => a.id === p.approvalId && !a.revokedAt);
-    if (p.status !== 'approved' || !approval || approval.packetHash !== packetHash(s, p, j) || approval.resumeHash !== s.profile.resume.sha256 || approval.formVersion !== j.formVersion || p.formVersion !== j.formVersion || p.unresolved.length || unresolved(s, p, j, now()).length) throw new AgentError('A current approval for the exact packet, profile, résumé, and form is required');
-    const attempt: SubmissionAttempt = { id: randomUUID(), packetId, jobId: j.id, batchId: approval.batchId, startedAt: now().toISOString(), finishedAt: null, outcome: 'in_progress', evidence: '', confirmationUrl: null };
+    const exactApproval = p.status === 'approved' && approval && approval.packetHash === packetHash(s, p, j) && approval.resumeHash === s.profile.resume.sha256 && approval.formVersion === j.formVersion;
+    const exactAutomatic = automatic && p.status === 'ready' && p.contentHash === packetHash(s, p, j) && !p.approvalId;
+    if (!(automatic ? exactAutomatic : exactApproval) || p.formVersion !== j.formVersion || p.unresolved.length || unresolved(s, p, j, now()).length) throw new AgentError(automatic ? 'A current, complete, unchanged packet and inspected form are required for automatic submission' : 'A current approval for the exact packet, profile, résumé, and form is required');
+    const attempt: SubmissionAttempt = { id: randomUUID(), packetId, jobId: j.id, batchId: automatic ? `automatic:${now().toISOString().slice(0, 10)}` : approval!.batchId, startedAt: now().toISOString(), finishedAt: null, outcome: 'in_progress', evidence: '', confirmationUrl: null };
     s.attempts.push(attempt); p.status = 'submitting'; return attempt;
    });
   },
@@ -510,9 +547,21 @@ export function createEngine(store: Store, options: { workspace?: string; now?: 
     return s.profile;
    });
   },
+  async addDocument(document: CandidateDocument): Promise<CandidateDocument> {
+   return store.update(s => {
+    const existing = s.profile.documents?.find(item => item.kind === document.kind && item.sha256 === document.sha256);
+    if (existing) {
+     if (!documentValid(existing)) throw new AgentError('The saved document copy is missing or changed');
+     return existing;
+    }
+    const patch = { documents: [...(s.profile.documents || []), document] };
+    validateProfilePatch(s, patch); applyProfilePatch(s, patch); refreshPendingPackets(s, now(), true);
+    return document;
+   });
+  },
   async updateSettings(patch: Partial<Settings>): Promise<Settings> {
    return store.update(s => {
-    validateSettingsPatch(s, patch); const changedPolicy = settingsPolicyChanged(s, patch);
+    validateSettingsPatch(s, patch); const changedPolicy = settingsPolicyChanged(s, patch) || patch.applicationPreferences !== undefined;
     s.settings = { ...s.settings, ...structuredClone(patch) };
     if (changedPolicy) refreshPendingPackets(s, now());
     return s.settings;

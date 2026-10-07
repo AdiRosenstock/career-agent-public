@@ -18,13 +18,13 @@ npm run build
 npm start
 ```
 
-Setup asks for the original résumé PDF path and uses local SQLite by default. It creates private `.env.local` only when absent, preserves existing configuration/backend choices and never rewrites the PDF. Doctor checks prerequisites without opening application state or printing credentials. Starting the app creates a fresh database when needed.
+Setup accepts an optional original résumé PDF path and uses local SQLite by default. If you skip the path, add the original PDF in **Start here** after launch. It creates private `.env.local` only when absent, preserves existing configuration/backend choices and never rewrites the PDF. Doctor checks prerequisites without opening application state or printing credentials. Starting the app creates a fresh database when needed.
 
-Open [the dashboard](http://127.0.0.1:4317) and complete **Start here**. Save contact details, career stage, job interests, locations/workplace preferences, compensation policy and separate work authorization answers. Use actual experience and graduation/start dates. Matching covers US full-time roles at the chosen new graduate, early-career or experienced level; it does not assume the creator's cohort or career interests. Unknown facts stay unknown.
+Open [the dashboard](http://127.0.0.1:4317) and complete **Start here**. Save contact details, career stage, job interests, preferred employers, skills and experience highlights, locations/workplace preferences, compensation policy and separate work authorization answers. Add your original résumé PDF before preparing applications. A private companion skill and `profile.json` are generated in `.data/skills/candidate-profile/` from these saved answers. Update the dashboard to change them. Use actual experience and graduation/start dates. Matching covers US full-time roles at the chosen new graduate, early-career or experienced level; it does not assume the creator's cohort or career interests. Unknown facts stay unknown.
 
 ## Give the agent one instruction
 
-Choose your assistant in the dashboard and copy its generated preparation instruction into the same chat. A simple request also works:
+Click **Search employer feeds now** for a direct dashboard search of configured public boards. For broader employer research and live forms, choose your assistant in the dashboard and copy its generated preparation instruction into the same chat. A simple request also works:
 
 ```text
 Use the job-application-agent skill and continue from my saved dashboard.
@@ -34,11 +34,11 @@ in Needs answers, continue other jobs, and leave final Submit for review.
 
 The agent starts with `npm run agent -- work`, a compact queue of setup gaps, actionable packets/jobs, missing questions and daily capacity. `work --limit 5` narrows it further. It reads exact packets only when working on them; the full `state` output is for diagnostics. It should use saved answers rather than repeatedly interview the candidate. New personal questions appear together in **Review queue → Needs answers**.
 
-The agent searches employer pages, refreshes configured feeds, checks available prior-application evidence, inspects actual forms and prepares sourced answers. The user does not need to select companies or configure feeds first. Browser access lets it fill real forms and upload the unchanged résumé. Supporting document choices remain explicit and part of review. A saved ready packet does not prove a live form is filled.
+The agent refreshes configured Greenhouse, Lever and Ashby feeds and searches saved employers' official career pages before broad web search. It checks prior-application evidence, inspects actual forms and prepares sourced answers under the saved writing choice. Browser access lets it fill real forms if the candidate selected agent form filling. Supporting document choices remain explicit. A ready packet alone does not prove a live form is filled. For screenshot-only forms, optional `npm run agent -- ocr-image --file SCREENSHOT.png` uses local Tesseract when installed; structured browser controls remain preferred.
 
 ## Review and complete a batch
 
-Review each packet's exact answers, documents and employer form. Approve the applications you want on the dashboard, then copy the generated submission instruction into your agent's chat. The agent reads the exact approved batch, rechecks live forms and submits supported browser forms with recorded attempts and confirmation evidence. It does not ask for the same permission again; changed packet contents or form requirements need fresh review.
+Upload your résumé, optional base cover letter PDF, and optional transcript PDF at the top of **Start here**, then choose who writes answers, fills forms and submits. The base letter is a drafting reference and cannot be attached as a generic supporting document; the transcript is selected for an exact application question. In review mode, inspect exact packets, approve a batch on the dashboard, then copy the generated submission instruction into your agent's chat. In automatic mode, accept the dashboard risk warning and use **Ask my agent to find jobs and apply**; the agent may submit only complete current packets after fresh live checks. In self mode, the candidate submits. Scheduled discovery and preparation never submit. Changed packet contents or form requirements must be resolved before any submission, and review mode needs fresh approval.
 
 Greenhouse, Lever, Ashby, Workday and other employer forms can be completed when the agent's browser handles the actual controls. A login needing your action, CAPTCHA, assessment, unreviewed consent or unsupported control blocks that job. The agent records the specific handoff and continues other jobs. It never treats a platform name alone as a reason to stop or claims success without confirmation. You may instead perform final submission yourself.
 

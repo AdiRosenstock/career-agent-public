@@ -133,6 +133,19 @@ test('discovery never reactivates or prepares a dismissed role', async t => {
   assert.equal(requests.length, 1);
 });
 
+test('feed search remains useful before a résumé is added', async t => {
+ mockBoard(t);
+ const rt=await fixture([fixtureBoard()]);
+ await rt.store.update(state => { state.profile.resume.path=path.join(directory,'not-added.pdf'); });
+ const run=await runDiscovery(rt,{prepare:true});
+ const state=await rt.store.read();
+ assert.equal(run.status,'complete');
+ assert.ok(run.discovered > 0);
+ assert.equal(run.prepared,0);
+ assert.equal(state.packets.length,0);
+ assert.deepEqual(run.errors,[]);
+});
+
 test('unchanged discovery and explicit refresh preserve approved packet and non-feed role evidence', async t => {
   mockBoard(t);
   const rt = await fixture([fixtureBoard()]);

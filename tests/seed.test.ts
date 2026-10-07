@@ -10,6 +10,7 @@ test('new production profiles are blank unless an explicit private profile seed 
  const dir = await mkdtemp(join(tmpdir(), 'career-seed-')); t.after(() => rm(dir, { recursive: true, force: true }));
  const resume = join(dir, 'resume.pdf'); await writeFile(resume, '%PDF-1.4 synthetic resume fixture');
  const blank = await createSeed({ resumePath: resume });
+ assert.deepEqual(blank.settings.rolePriority, [], 'New users must choose their own career paths');
  for (const field of ['name', 'email', 'phone', 'linkedin', 'github', 'graduation', 'visaStatus'] as const) assert.equal(blank.profile[field], '');
  assert.deepEqual(blank.profile.facts, []); assert.equal(blank.profile.futureSponsorship, null);
  const file = join(dir, 'profile-seed.json');

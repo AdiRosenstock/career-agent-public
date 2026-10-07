@@ -21,6 +21,8 @@ For a manual job, inspect `shared/types.ts` and an existing job from `packet ID`
 
 To resume a user-approved batch: `approved BATCH_ID`, `packet PACKET_ID`, `refresh JOB_ID`, `job-inspect JOB_ID --file FILE`, then `begin PACKET_ID` immediately before the final submission action. `begin` returns the attempt identifier; pass that identifier to `finish`.
 
+For a candidate-requested automatic application run, read `work` and its `readyPackets` IDs, then the exact `packet PACKET_ID`; refresh and reinspect the live form before `begin PACKET_ID`. Automatic mode still needs a confirmed dashboard risk choice and a complete unchanged packet. Scheduled preparation never invokes `begin`.
+
 Use shell-safe structured files for long text. Unknown outcomes cannot be retried until `reconcile` records checked evidence. Employer-only keys and application POST APIs are never needed.
 
 Register a user-supplied supporting PDF (no upload occurs):

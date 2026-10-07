@@ -15,6 +15,7 @@ Use `npm run agent -- help` for the executable contract and the [payload example
 | `profile-update --file FILE` | Save candidate-confirmed profile answers |
 | `settings-update --file FILE` | Change preparation/compensation settings |
 | `resume-update --file PDF` | Capture a new unchanged résumé; invalidate affected approvals |
+| `ocr-image --file IMAGE` | Optional local Tesseract OCR for screenshot-only form labels; writes private text under `.data/ocr/` |
 | `document-add --file FILE` | Register unchanged supporting PDF metadata; no employer upload |
 | `prior-application --file FILE` | Record minimal sourced prior-application evidence |
 | `discover` | Refresh enabled feeds and record run/backup |

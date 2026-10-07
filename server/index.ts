@@ -4,7 +4,9 @@ import { createServer as createViteServer } from 'vite';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { z } from 'zod';
-import { openRuntime, workspace, importJob, runDiscovery, inspectForm, codexPrompt, backupState } from './runtime.js';
+import { openRuntime, workspace, dataDir, importJob, runDiscovery, inspectForm, codexPrompt, backupState } from './runtime.js';
+import { registerResumeUpload } from './resume.js';
+import { registerDocumentUpload } from './documents.js';
 import { assessJob, validateBoard } from './discovery.js';
 import type { Board, PacketDraft } from '../shared/types.js';
 import { verifiedDocumentBytes } from './documents.js';
@@ -28,8 +30,16 @@ app.use((req,res,next)=>{
  }
  next();
 });
-app.use(express.json({limit:'2mb'}));
 const route=(handler:(req:express.Request,res:express.Response)=>Promise<unknown>):express.RequestHandler=>(req,res,next)=>{handler(req,res).catch(next);};
+app.post('/api/resume/upload', express.json({limit:'28mb'}), route(async(req,res)=>{
+ const input=z.object({filename:z.string().min(1).max(255),base64:z.string().min(1).max(28_000_000)}).strict().parse(req.body);
+ res.json(await registerResumeUpload(rt,dataDir,input.filename,input.base64));
+}));
+app.post('/api/documents/upload', express.json({limit:'28mb'}), route(async(req,res)=>{
+ const input=z.object({filename:z.string().min(1).max(255),base64:z.string().min(1).max(28_000_000),kind:z.enum(['transcript','recommendation','base_cover_letter']),label:z.string().min(1).max(200).optional(),documentDate:z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),notes:z.string().max(5000).optional()}).strict().parse(req.body);
+ res.json(await registerDocumentUpload(rt,dataDir,input));
+}));
+app.use(express.json({limit:'2mb'}));
 app.get('/api/health',(_req,res)=>res.json({ok:true,service:'career-agent'}));
 app.get('/api/state',route(async(_req,res)=>res.json(await rt.engine.snapshot())));
 app.get('/api/work',route(async(req,res)=>res.json(agentWork(await rt.engine.snapshot(),{dashboardUrl:`http://${req.headers.host}`,...z.object({limit:z.coerce.number().int().min(1).max(20).optional(),offset:z.coerce.number().int().min(0).max(Number.MAX_SAFE_INTEGER).optional(),batchId:z.string().min(1).max(128).optional()}).parse(req.query)}))));
@@ -50,7 +60,11 @@ app.get('/api/resume',route(async(_req,res)=>{
  res.setHeader('Content-Disposition',`inline; filename="${filename.replace(/[^a-zA-Z0-9 ._()-]/g, '_')}"; filename*=UTF-8''${encodeURIComponent(filename)}`);res.sendFile(snapshot.profile.resume.path, {dotfiles: 'allow'});
 }));
 app.get('/api/export',route(async(_req,res)=>{await backupState(rt);res.setHeader('Content-Disposition','attachment; filename="career-agent-backup.json"');res.json(await rt.store.read());}));
-const promptRoute = route(async(req,res)=>res.json({prompt:codexPrompt(String(req.query.mode||'prepare'),req.query.batchId?String(req.query.batchId):undefined,z.enum(['codex','claude']).parse(req.query.provider||'codex'))}));
+const promptRoute = route(async(req,res)=>{
+ const mode=String(req.query.mode||'prepare');
+ if(mode==='automatic' && (await rt.engine.snapshot()).settings.applicationPreferences?.submission!=='automatic') {res.status(400).json({error:'Select and confirm automatic submission in Start here first'});return;}
+ res.json({prompt:codexPrompt(mode,req.query.batchId?String(req.query.batchId):undefined,z.enum(['codex','claude']).parse(req.query.provider||'codex'))});
+});
 app.get('/api/agent-prompt', promptRoute);
 app.get('/api/codex-prompt', promptRoute); // Compatibility for existing clients.
 
@@ -73,8 +87,8 @@ app.post('/api/approvals',route(async(req,res)=>{
  const approved=await rt.engine.approve(packetIds);res.json({...approved,approved:approved.packetIds.length,prompt:codexPrompt('submit',approved.batchId,provider)});
 }));
 const booleanAnswer=z.boolean().nullable();
-const profilePatch=z.object({name:z.string().trim().min(1).max(300).optional(),email:z.email().optional(),phone:z.string().max(100).optional(),linkedin:z.union([z.url(),z.literal('')]).optional(),github:z.union([z.url(),z.literal('')]).optional(),graduation:z.string().regex(/^$|^\d{4}-(?:0[1-9]|1[0-2])$/).optional(),visaStatus:z.string().max(200).optional(),anticipatedOPT:z.boolean().optional(),earliestStart:z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),salaryPreference:z.string().max(500).nullable().optional(),usCitizen:booleanAnswer.optional(),exportControlEligible:booleanAnswer.optional(),clearanceEligible:booleanAnswer.optional(),authorizationNow:booleanAnswer.optional(),authorizationAtStart:booleanAnswer.optional(),futureSponsorship:booleanAnswer.optional(),authorizationConfirmedAt:z.string().nullable().optional(),savedAnswers:z.array(z.object({id:z.string(),question:z.string().min(1).max(3000),answer:z.string().max(15000),confirmedAt:z.string()})).max(500).optional()});
-const settingsPatch=z.object({careerStage:z.enum(['new_grad','early_career','experienced']).optional(),yearsExperience:z.number().min(0).max(60).nullable().optional(),careerTargetsConfirmed:z.boolean().optional(),rolePriority:z.array(z.enum(roleFamilies)).max(roleFamilies.length).optional(),roleKeywords:z.array(z.string().trim().min(1).max(100)).max(30).optional(),preferredLocations:z.array(z.string().trim().min(1).max(200)).max(30).optional(),workplacePreference:z.enum(['any','remote','hybrid','onsite']).optional(),dailyLimit:z.number().int().min(1).max(20).optional(),minimumAnnualCompensation:z.number().int().min(0).max(10000000).nullable().optional(),compensationBasis:z.enum(['base','total']).optional()}).strict();
+const profilePatch=z.object({name:z.string().trim().min(1).max(300).optional(),email:z.email().optional(),phone:z.string().max(100).optional(),linkedin:z.union([z.url(),z.literal('')]).optional(),github:z.union([z.url(),z.literal('')]).optional(),graduation:z.string().regex(/^$|^\d{4}-(?:0[1-9]|1[0-2])$/).optional(),visaStatus:z.string().max(200).optional(),anticipatedOPT:z.boolean().optional(),earliestStart:z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),salaryPreference:z.string().max(500).nullable().optional(),usCitizen:booleanAnswer.optional(),exportControlEligible:booleanAnswer.optional(),clearanceEligible:booleanAnswer.optional(),authorizationNow:booleanAnswer.optional(),authorizationAtStart:booleanAnswer.optional(),futureSponsorship:booleanAnswer.optional(),authorizationConfirmedAt:z.string().nullable().optional(),facts:z.array(z.object({id:z.string().min(1),label:z.string().min(1),value:z.string().max(5000),source:z.string().min(1),confirmed:z.boolean()})).max(200).optional(),savedAnswers:z.array(z.object({id:z.string(),question:z.string().min(1).max(3000),answer:z.string().max(15000),confirmedAt:z.string()})).max(500).optional()});
+const settingsPatch=z.object({applicationPreferences:z.object({writtenAnswers:z.enum(['draft','saved_only','self']),formFilling:z.enum(['agent','self']),submission:z.enum(['self','review','automatic']),confirmedAt:z.string().datetime(),automaticRiskAccepted:z.boolean()}).strict().optional(),careerStage:z.enum(['new_grad','early_career','experienced']).optional(),yearsExperience:z.number().min(0).max(60).nullable().optional(),careerTargetsConfirmed:z.boolean().optional(),rolePriority:z.array(z.enum(roleFamilies)).max(roleFamilies.length).optional(),roleKeywords:z.array(z.string().trim().min(1).max(100)).max(30).optional(),preferredLocations:z.array(z.string().trim().min(1).max(200)).max(30).optional(),targetEmployers:z.array(z.string().trim().min(1).max(200)).max(30).optional(),preferredCareerSites:z.array(z.url().max(500)).max(20).optional(),workplacePreference:z.enum(['any','remote','hybrid','onsite']).optional(),dailyLimit:z.number().int().min(1).max(20).optional(),minimumAnnualCompensation:z.number().int().min(0).max(10000000).nullable().optional(),compensationBasis:z.enum(['base','total']).optional()}).strict();
 app.post('/api/profile',route(async(req,res)=>res.json(await rt.engine.updateProfile(profilePatch.parse(req.body)))));
 app.post('/api/settings',route(async(req,res)=>res.json(await rt.engine.updateSettings(settingsPatch.parse(req.body)))));
 app.post('/api/onboarding',route(async(req,res)=>{

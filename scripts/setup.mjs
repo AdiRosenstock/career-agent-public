@@ -14,11 +14,14 @@ function quoted(value) {
 export async function configureWorkspace({ directory = root, resume, backend = 'sqlite', port = 4317, dataDir, supabaseUrl }) {
   if (!['sqlite', 'supabase'].includes(backend)) throw new Error('Choose sqlite or supabase.');
   if (!Number.isInteger(Number(port)) || Number(port) < 1024 || Number(port) > 65535) throw new Error('Port must be 1024–65535.');
-  if (!resume) throw new Error('An unchanged résumé PDF is required.');
-  const resumePath = path.resolve(directory, resume);
-  const file = await open(resumePath, 'r');
-  try { const bytes = Buffer.alloc(4); const { bytesRead } = await file.read(bytes, 0, 4, 0); if (bytesRead !== 4 || bytes.toString() !== '%PDF') throw new Error('The selected document must be a readable PDF.'); } finally { await file.close(); }
-  const lines = ['# Private local configuration. Never commit this file.', `CAREER_BACKEND=${backend}`, `PORT=${port}`, `CAREER_RESUME_PATH=${quoted(resumePath)}`];
+  let resumePath;
+  if (resume) {
+    resumePath = path.resolve(directory, resume);
+    const file = await open(resumePath, 'r');
+    try { const bytes = Buffer.alloc(4); const { bytesRead } = await file.read(bytes, 0, 4, 0); if (bytesRead !== 4 || bytes.toString() !== '%PDF') throw new Error('The selected document must be a readable PDF.'); } finally { await file.close(); }
+  }
+  const lines = ['# Private local configuration. Never commit this file.', `CAREER_BACKEND=${backend}`, `PORT=${port}`];
+  if (resumePath) lines.push(`CAREER_RESUME_PATH=${quoted(resumePath)}`);
   if (dataDir) lines.push(`CAREER_DATA_DIR=${quoted(path.resolve(directory, dataDir))}`);
   if (backend === 'supabase') {
     const u = new URL(supabaseUrl || '');
@@ -34,12 +37,11 @@ async function main() {
   if (args.includes('--help')) { console.log('npm run setup [-- --resume PDF --backend sqlite|supabase --port 4317 --data-dir DIR --supabase-url URL]\nNo flags: interactive setup. Existing .env.local is never overwritten. No database is created or migrated.'); return; }
   try { await access(path.join(root, '.env.local'), constants.F_OK); console.log('Existing .env.local preserved. Run npm run doctor to check it. To migrate, use docs/CONFIGURATION.md.'); return; } catch (e) { if (e.code !== 'ENOENT') throw e; }
   let resume = flag('resume'), backend = flag('backend') || 'sqlite', port = flag('port') || '4317', supabaseUrl = flag('supabase-url');
-  if (!resume) {
-    if (!process.stdin.isTTY) throw new Error('Pass --resume /absolute/path/to/resume.pdf for non-interactive setup.');
+  if (!resume && process.stdin.isTTY) {
     const rl = createInterface({ input: process.stdin, output: process.stdout });
-    try { console.log('Career Agent setup. Your profile and job preferences will be collected in the dashboard.'); resume = (await rl.question('Path to your unchanged résumé PDF: ')).trim(); if (backend === 'supabase' && !supabaseUrl) supabaseUrl = (await rl.question('Your Supabase project URL (not a key): ')).trim(); } finally { rl.close(); }
+    try { console.log('Career Agent setup. Your profile and job preferences will be collected in the dashboard.'); resume = (await rl.question('Path to your unchanged résumé PDF (or press Enter to add it on the dashboard): ')).trim(); if (backend === 'supabase' && !supabaseUrl) supabaseUrl = (await rl.question('Your Supabase project URL (not a key): ')).trim(); } finally { rl.close(); }
   }
   await configureWorkspace({ resume, backend, port, dataDir: flag('data-dir'), supabaseUrl });
-  console.log(`Private configuration created. No application state changed.\n${backend === 'supabase' ? 'Apply supabase/schema.sql to your own project and privately set SUPABASE_SECRET_KEY first.\n' : 'Using private storage on your computer.\n'}Next: npm run doctor\nThen: npm run build && npm start\nOpen http://127.0.0.1:${port}\nComplete Start here, then copy your job-search instruction. See docs/AGENT_SETUP.md.`);
+  console.log(`Private configuration created. No application state changed.\n${backend === 'supabase' ? 'Apply supabase/schema.sql to your own project and privately set SUPABASE_SECRET_KEY first.\n' : 'Using private storage on your computer.\n'}Next: npm run doctor\nThen: npm run build && npm start\nOpen http://127.0.0.1:${port}\nComplete Start here, add your original résumé PDF if needed, then copy your job-search instruction. See docs/AGENT_SETUP.md.`);
 }
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main().catch(e => { console.error(e.code === 'EEXIST' ? 'Existing .env.local preserved. Setup will not overwrite it.' : e.message); process.exitCode = 1; });

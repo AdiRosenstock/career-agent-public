@@ -142,7 +142,7 @@ export function assessCompensation(job: Job, minimum: number | null, basis: 'bas
   const min = sameKind.some(candidate => candidate.min === null) ? null : Math.min(...sameKind.map(candidate => candidate.min!));
   const max = sameKind.some(candidate => candidate.max === null) ? null : Math.max(...sameKind.map(candidate => candidate.max!));
   const result: CompensationAssessment = { ...empty, ...sameKind[0], min, max, excerpt: [...new Set(sameKind.map(candidate => candidate.excerpt))].join('\n…\n') };
-  if (minimum === null || !matching.length || !Number.isFinite(minimum) || minimum < 0) return result;
+  if (minimum === null || !matching.length || !Number.isFinite(minimum) || minimum <= 0) return result;
   if (min !== null && min >= minimum) result.status = 'meets';
   else if (basis === 'total' && result.basis === 'base') result.status = 'unknown';
   else if (max !== null && max < minimum) result.status = 'below';
@@ -151,7 +151,7 @@ export function assessCompensation(job: Job, minimum: number | null, basis: 'bas
 }
 
 export function compensationEligibilityReasons(job: Job, minimum: number | null, basis: 'base' | 'total'): string[] {
-  if (minimum === null) return [];
+  if (minimum === null || minimum <= 0) return [];
   const assessment = assessCompensation(job, minimum, basis);
   const target = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(minimum);
   if (assessment.status === 'meets') return [];
