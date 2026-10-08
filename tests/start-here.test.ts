@@ -33,6 +33,12 @@ test('saved intake refreshes clean values, preserves dirty edits, and keeps city
  state = { ...state, profile: { ...state.profile, name: 'Updated Example' } }; await render();
  const buttons = () => Array.from(dom.window.document.querySelectorAll('button'));
  await act(async () => buttons().find(button => button.textContent === 'Edit my saved preferences')!.click());
+ const submissionOptions = Array.from(dom.window.document.querySelectorAll<HTMLInputElement>('input[name="submission-mode"]'));
+ assert.deepEqual(submissionOptions.map(input => input.closest('label')?.querySelector('b')?.textContent), ['I click Submit', 'Adi submits batches I approve', 'Adi finds, fills, and submits for me']);
+ assert.equal(submissionOptions.find(input => input.value === 'review')?.checked, true);
+ await act(async () => submissionOptions.find(input => input.value === 'automatic')!.click());
+ assert.match(dom.window.document.querySelector('.start-risk')?.textContent || '', /without my review of each one/);
+ await act(async () => dom.window.document.querySelector<HTMLInputElement>('.start-risk input')!.click());
  assert.equal(dom.window.document.querySelector<HTMLInputElement>('input[type="number"][max="2"]')?.value, '2', 'Early-career experience is saved as an exact count');
  assert.equal(dom.window.document.querySelector<HTMLAnchorElement>('.start-intake-map-identity')?.getAttribute('href'), '#start-self-id');
  assert.equal(dom.window.document.querySelector<HTMLDetailsElement>('#start-search-priorities')?.open, true, 'Search priorities are visible during onboarding');
@@ -70,6 +76,8 @@ test('saved intake refreshes clean values, preserves dirty edits, and keeps city
  assert.equal(select.value, 'remote', 'Refresh must preserve a current unsaved choice');
  assert.equal(workLink.querySelector<HTMLInputElement>('input')?.value, 'Mechanical design portfolio', 'Refresh must preserve an unsaved portfolio link');
  await act(async () => dom.window.document.querySelector('form')!.dispatchEvent(new dom.window.Event('submit', { bubbles: true, cancelable: true })));
+ assert.equal(saved?.settings.applicationPreferences?.submission, 'automatic');
+ assert.equal(saved?.settings.applicationPreferences?.automaticRiskAccepted, true);
  assert.equal(saved?.profile.name, 'Updated Example'); assert.deepEqual(saved?.settings.preferredLocations, ['Chicago, IL', 'Austin, TX']); assert.deepEqual(saved?.settings.targetEmployers, ['Northstar Labs', 'Acme Health']); assert.equal(saved?.settings.workplacePreference, 'remote');
  assert.equal(saved?.profile.savedAnswers?.find(answer => answer.question === 'Are you open to relocation?')?.answer, 'Yes');
  assert.equal(saved?.profile.savedAnswers?.some(answer => answer.question === 'Are you willing to relocate?'), false, 'Legacy aliases must not conflict with new preferences');

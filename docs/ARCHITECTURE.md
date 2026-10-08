@@ -1,6 +1,6 @@
 # Architecture
 
-Career Agent separates a deterministic record system from agent-driven research and employer interactions. The dashboard does not contain a model SDK or a generic employer submission API.
+Career Agent separates a deterministic record system from agent-driven research and employer interactions. The shared Codex / Claude Code workflow uses the persona Adi “The Goat” Rosenstock; the persona is presentation only, while saved candidate facts are authoritative. The dashboard does not contain a model SDK or a generic employer submission API.
 
 ## Components
 
@@ -10,13 +10,13 @@ Career Agent separates a deterministic record system from agent-driven research 
 | Shared contracts | `shared/types.ts` | Typed jobs, evidence, facts, packets, attempts, settings |
 | Application grouping | `shared/applicationHub.ts` | Applied/archive/research/active presentation and minimal helper profile |
 | HTTP boundary | `server/index.ts` | Loopback API, request checks, document delivery, static/Vite serving |
-| Runtime | `server/runtime.ts` | Environment selection, startup, feed refresh, Codex prompts |
+| Runtime | `server/runtime.ts` | Environment selection, startup, feed refresh, Codex / Claude Code prompts |
 | Domain engine | `server/engine.ts` | Eligibility, duplicate matching, preparation, approvals, state transitions |
 | Discovery | `server/discovery.ts` | Public ATS adapters, normalization, employment/cohort assessment |
 | Compensation | `server/compensation.ts` | Evidence-based annual pay assessment |
 | Documents | `server/resume.ts`, `server/documents.ts` | Immutable local PDF capture, metadata and SHA-256 verification |
 | Store | `server/store.ts` | Strict state validation, SQLite transactions, Supabase revision checks |
-| Agent CLI | `server/cli.ts` | Structured operations used by Codex |
+| Agent CLI | `server/cli.ts` | Structured operations used by Codex or Claude Code |
 | Agent workflow | `.agents/skills/job-application-agent/` | Research/filling procedure and authority boundaries |
 | Optional helper | `browser-extension/` | Previewed blank text-field filling in Chrome/Edge |
 | Portable full export | `shared/helperBundle.ts` | Confirmed facts/answers and packet references, without credentials or local paths |
@@ -29,18 +29,28 @@ sequenceDiagram
     participant UI as Dashboard
     participant Engine
     participant Store
-    participant Codex
+    participant Agent as Adi in Codex / Claude Code
     participant ATS as Employer browser
     Candidate->>UI: Confirm profile and criteria
     UI->>Engine: Validated update
     Engine->>Store: Persist state
-    Candidate->>Codex: Request research/preparation
-    Codex->>Engine: Import evidence and inspect form
+    Candidate->>Agent: Request research/preparation
+    Agent->>Engine: Import evidence and inspect form
     Engine->>Store: Save packet and unresolved fields
-    Candidate->>UI: Review exact packet
-    Candidate->>ATS: Review and submit filled form
-    Note over Codex,ATS: Agent submission is separate and requires explicit authorization
-    Codex->>Engine: Record sourced result/handoff
+    alt Self submission
+        Candidate->>ATS: Review and submit filled form
+    else Approved batch
+        Candidate->>UI: Review and approve exact packet
+        Candidate->>Agent: Request approved batch submission
+        Agent->>Engine: Begin a current authorized attempt
+        Agent->>ATS: Complete live form and click Submit
+    else Automatic submission
+        Candidate->>UI: Accept risk and choose automatic mode
+        Candidate->>Agent: Request application run
+        Agent->>Engine: Begin a current authorized attempt
+        Agent->>ATS: Complete live form and click Submit
+    end
+    Agent->>Engine: Record sourced result/handoff
     Engine->>Store: Preserve audit evidence
 ```
 

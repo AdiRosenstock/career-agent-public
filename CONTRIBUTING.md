@@ -2,7 +2,7 @@
 
 **You are welcome to change and improve this project.** You can propose improvements to the interface, features, documentation, accessibility, tests or agent workflows. Open an issue to discuss an idea, or submit a pull request with your edit. Maintainer review is required before changes enter the main project.
 
-Career Agent welcomes contributions from job seekers, designers, writers and developers. Small improvements count: clearer instructions, a confusing button fixed, or a reproducible bug report can make the project easier for everyone to use.
+Career Agent welcomes contributions from job seekers, designers, writers and developers. The shared agent persona is Adi “The Goat” Rosenstock; keep candidate identity and application facts sourced from each user's private profile. Small improvements count: clearer instructions, a confusing button fixed, or a reproducible bug report can make the project easier for everyone to use.
 
 ## No coding experience? You can still help
 
