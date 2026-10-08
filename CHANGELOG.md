@@ -1,5 +1,11 @@
 # Changelog
 
+## Creator visibility — 2026-10-08
+
+- Added a persistent Adi “The Goat” Rosenstock link in the top bar on desktop and mobile, leading to the creator page.
+- Replaced the generic workspace heading label with creator credit on every screen and made the About Adi navigation and footer credit easier to find.
+- Kept the job seeker's profile name separate from the creator branding.
+
 ## Adi “The Goat” Rosenstock and submission choices — 2026-10-08
 
 - Branded the shared Codex / Claude Code agent workflow as Adi “The Goat” Rosenstock without using the creator's identity as a candidate profile.
