@@ -215,6 +215,12 @@ function experienceRequirements(description: string): { minimum: number; preferr
   const requirements: { minimum: number; preferred: boolean }[] = [];
   const numberWords: Record<string, number> = { zero: 0, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10 };
   for (const clause of description.split(/[.!?\n;]/)) {
+    // Some boards publish structured experience as "Min Yr = 1Max Yr = 3+".
+    // The maximum is a range endpoint, not a three-year minimum.
+    for (const match of clause.matchAll(/\bmin(?:imum)?\s*(?:years?|yrs?|yr)\s*[:=]\s*(\d{1,2})(?=\s*max\b|\b)/gi)) {
+      const preferred = /\b(?:preferred|nice.to.have|optional|not required)\b/i.test(clause);
+      requirements.push({ minimum: Number(match[1]), preferred });
+    }
     // Match the qualification, including "8+ years in ...", not only the narrow
     // "years of experience" phrase. Company tenure and program duration are not qualifications.
     for (const match of clause.matchAll(/\b(\d{1,2}|zero|one|two|three|four|five|six|seven|eight|nine|ten)\s*(?:\+|(?:[-–—]|to)\s*\d{1,2})?\s*(?:years?|yrs?)\b['’]?(?=([^]{0,180}))/gi)) {
@@ -334,11 +340,27 @@ export function assessJob(input: Job, policy: JobAssessmentPolicy = {}): Job {
   const text = `${job.title}\n${job.description}`;
   const experience = experienceRequirements(job.description);
   if (!experienced && experience.some(requirement => requirement.minimum >= 3 && !requirement.preferred)) block('Requires at least three years of experience');
+  if (stage === 'early_career' && experience.some(requirement => requirement.minimum > 0 && !requirement.preferred)
+    && policy.yearsExperience == null) block('Career target: confirm years of professional experience for this posting');
+  if (stage === 'early_career' && policy.yearsExperience != null
+    && experience.some(requirement => !requirement.preferred && requirement.minimum > policy.yearsExperience!)) block('Career target: required experience exceeds your saved years of experience');
   if (experienced && policy.yearsExperience == null) block('Career target: confirm years of professional experience');
   if (experienced && policy.yearsExperience != null && experience.some(requirement => !requirement.preferred && requirement.minimum > policy.yearsExperience!)) block('Career target: required experience exceeds your saved years of experience');
   const earlyCareer = earlyCareerEvidence(job.title, job.description, experience);
   if (!experienced && earlyCareer.excluded) block('Posting explicitly excludes graduate or entry-level applicants');
   if (!experienced && !earlyCareer.title && !earlyCareer.description) block('Graduate/entry-level suitability is not established by the posting');
+  if (stage === 'early_career') {
+    const cohortClauses = [job.title, ...job.description.split(/[\n.!?]/).filter(clause =>
+      /\b(?:graduat\w*|class of|cohort)\b/i.test(clause)
+      && !(/\bclass of\b/i.test(clause) && !/\b(?:you|candidate|applicant|student|graduat\w*|cohort|new[ -]?grad)\b/i.test(clause)))];
+    const cohortYears = cohortClauses.flatMap(clause => [...clause.matchAll(/\b20(?:2\d|3[0-5])\b/g)].map(match => Number(match[0])));
+    if (cohortYears.length && !/^20\d{2}-(0[1-9]|1[0-2])$/.test(graduation)) {
+      block('Career target: confirm graduation month for this cohort-restricted posting');
+    } else if (cohortYears.length && !cohortYears.includes(targetYear)
+      && !(cohortYears.length >= 2 && Math.min(...cohortYears) <= targetYear && Math.max(...cohortYears) >= targetYear)) {
+      block(`Career target: posting graduation cohort does not include ${targetYear}`);
+    }
+  }
   if (stage === 'new_grad') {
     if (!/^20\d{2}-(0[1-9]|1[0-2])$/.test(graduation)) block('Career target: confirm your graduation month in Profile');
     else {

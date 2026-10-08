@@ -14,7 +14,8 @@ test('saved intake refreshes clean values, preserves dirty edits, and keeps city
  t.after(async () => { await act(async () => root.unmount()); dom.window.close(); globals.window = previous.window; globals.document = previous.document; globals.IS_REACT_ACT_ENVIRONMENT = previous.IS_REACT_ACT_ENVIRONMENT; if (previous.navigator) Object.defineProperty(globalThis, 'navigator', previous.navigator); else delete globals.navigator; });
  let state = {
   profile: { name: 'Alex Example', email: 'alex@example.test', phone: '+1 202-555-0100', graduation: '', authorizationNow: true, authorizationAtStart: true, futureSponsorship: false, authorizationConfirmedAt: '2026-10-02T12:00:00Z', earliestStart: null, facts: [{ id: 'mechanical-projects', label: 'Mechanical project evidence', value: 'Designed and tested a student robot gripper in SolidWorks.', source: 'user:confirmed-dashboard', confirmed: true }], savedAnswers: [{ id: 'legacy-relocation', question: 'Are you willing to relocate?', answer: 'Yes', confirmedAt: '2026-10-02T12:00:00Z' }], resume: { filename: 'original.pdf' } },
-  settings: { careerStage: 'early_career', careerTargetsConfirmed: true, rolePriority: ['design'], roleKeywords: [], preferredLocations: ['Chicago, IL', 'Austin, TX'], targetEmployers: ['Northstar Labs', 'Acme Health'], workplacePreference: 'any', minimumAnnualCompensation: 0, applicationPreferences: { writtenAnswers: 'draft', formFilling: 'agent', submission: 'review', confirmedAt: '2026-10-02T12:00:00Z', automaticRiskAccepted: false } },
+  settings: { careerStage: 'early_career', yearsExperience: 2, careerTargetsConfirmed: true, rolePriority: ['design'], roleKeywords: [], preferredLocations: ['Chicago, IL', 'Austin, TX'], targetEmployers: ['Northstar Labs', 'Acme Health'], workplacePreference: 'any', minimumAnnualCompensation: 0, applicationPreferences: { writtenAnswers: 'draft', formFilling: 'agent', submission: 'review', confirmedAt: '2026-10-02T12:00:00Z', automaticRiskAccepted: false } },
+  boards: [{ id: 'greenhouse:example', company: 'Example', source: 'greenhouse', token: 'example', enabled: true, sponsorship: [] }],
   packets: [], approvals: [], jobs: [], attempts: [], meta: { resumeValid: true, workspace: 'synthetic-workspace' },
  } as unknown as AppSnapshot;
  let saved: { profile: Partial<CandidateProfile>; settings: Partial<Settings> } | undefined;
@@ -26,9 +27,13 @@ test('saved intake refreshes clean values, preserves dirty edits, and keeps city
  assert.deepEqual(Array.from(documentSection.querySelectorAll<HTMLInputElement>('input[type=file]')).map(input => input.getAttribute('aria-label')), ['Replace original résumé PDF', 'Base cover letter PDF', 'Academic transcript PDF']);
  await act(async () => Array.from(dom.window.document.querySelectorAll('button')).find(button => button.textContent?.includes('Search employer feeds now'))!.click());
  assert.equal(searches,1,'Start here must launch dashboard discovery directly');
+ state = { ...state, boards: [] }; await render();
+ assert.equal(Array.from(dom.window.document.querySelectorAll('button')).find(button => button.textContent?.includes('Search employer feeds now'))?.disabled, true);
+ assert.match(dom.window.document.querySelector('.start-action-help')?.textContent || '', /No feeds are configured yet/);
  state = { ...state, profile: { ...state.profile, name: 'Updated Example' } }; await render();
  const buttons = () => Array.from(dom.window.document.querySelectorAll('button'));
  await act(async () => buttons().find(button => button.textContent === 'Edit my saved preferences')!.click());
+ assert.equal(dom.window.document.querySelector<HTMLInputElement>('input[type="number"][max="2"]')?.value, '2', 'Early-career experience is saved as an exact count');
  assert.equal(dom.window.document.querySelector<HTMLAnchorElement>('.start-intake-map-identity')?.getAttribute('href'), '#start-self-id');
  assert.equal(dom.window.document.querySelector<HTMLDetailsElement>('#start-search-priorities')?.open, true, 'Search priorities are visible during onboarding');
  const identitySection = dom.window.document.querySelector<HTMLElement>('#start-self-id')!;

@@ -5,7 +5,7 @@ const summary = (text: string, max = 240) => text.length > max ? `${text.slice(0
 
 /** A bounded index. Read packet ID for exact facts, answers and job descriptions. */
 export function agentWork(state: AppSnapshot, options: { limit?: number; offset?: number; batchId?: string; dashboardUrl?: string } = {}) {
- const limit = options.limit ?? 8;
+ const limit = options.limit ?? 5;
  const offset = options.offset ?? 0;
  if (!Number.isInteger(limit) || limit < 1 || limit > 20) throw new Error('Work limit must be between 1 and 20.');
  if (!Number.isSafeInteger(offset) || offset < 0) throw new Error('Work offset must be a nonnegative integer.');
@@ -55,7 +55,7 @@ export function agentWork(state: AppSnapshot, options: { limit?: number; offset?
   unresolvedAttempts: unresolvedAttempts.slice(0, limit).map(({ id, packetId, jobId, outcome }) => ({ id, packetId, jobId, outcome })),
   handoffs: handoffs.slice(0, limit).map(packet => ({ ...packetSummary(packet), evidence: summary([...state.attempts].reverse().find(attempt => attempt.packetId === packet.id && attempt.outcome === 'handoff')?.evidence || '', 400) })),
   ...(options.batchId ? {} : {
-   questions: [...missing.values()].sort((a, b) => b.packetIds.length - a.packetIds.length).slice(0, limit).map(group => ({ question: summary(group.question, 160), options: group.options.slice(0, 8).map(option => summary(option, 80)), affectedPackets: group.packetIds.length, packetIds: group.packetIds.slice(0, limit) })),
+   questions: [...missing.values()].sort((a, b) => b.packetIds.length - a.packetIds.length).slice(0, limit).map(group => ({ question: summary(group.question, 160), options: group.options.slice(0, 3).map(option => summary(option, 80)), moreOptions: Math.max(0, group.options.length - 3), affectedPackets: group.packetIds.length, packetIds: group.packetIds.slice(0, limit) })),
    matches: candidates.slice(0, limit).map(({ id, company, title, location }) => ({ id, company: summary(company, 80), title: summary(title, 160), location: summary(location, 120), command: `npm run agent -- job ${id}` })),
    research: research.slice(0, Math.min(limit, 5)).map(({ id, company, title, eligibilityReasons }) => ({ id, company: summary(company, 80), title: summary(title, 160), reasons: eligibilityReasons.slice(0, 4).map(text => summary(text)), command: `npm run agent -- job ${id}` })),
   }),
