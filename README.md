@@ -109,7 +109,7 @@ Wait for installation to finish. The `career-agent-public` folder is your copy o
 npm run demo
 ```
 
-Open [the demo at 127.0.0.1:4318](http://127.0.0.1:4318) in your browser. Try the company, sponsorship, location, pay and career-track filters. **About** in the left menu introduces the creator. The demo uses fictional jobs and a placeholder résumé; do not use them for real applications. It never loads your personal application database.
+Open [the demo at 127.0.0.1:4318](http://127.0.0.1:4318) in your browser. Try the company, sponsorship, location, pay and career-track filters. **About Adi** in the left menu introduces the creator. The demo uses fictional jobs and a placeholder résumé; do not use them for real applications. It never loads your personal application database.
 
 Press **Ctrl+C** in the terminal to stop the demo when you are ready for your own workspace.
 
@@ -135,7 +135,7 @@ Open [your dashboard at 127.0.0.1:4317](http://127.0.0.1:4317). This address wor
 - **Review queue:** answer missing questions together, review exact packets and approve a batch.
 - **Applications:** filter saved roles and review the evidence. Employer sponsorship history is not confirmation for a specific role.
 - **Opportunities:** add a job posting or refresh configured public employer feeds. An empty list is normal until jobs are imported or feeds are configured.
-- **About:** find the creator's background, LinkedIn, GitHub and source links. You can reopen it directly with `?view=about`.
+- **About Adi:** use the creator link in the top bar to find Adi Rosenstock's background, LinkedIn, GitHub and source links. You can reopen it directly with `?view=about`.
 
 Your private files live in `.data/` and `.env.local`. They are excluded from Git. **GitHub stores the code, not your application records.** Keep a private backup if you need to restore your history later.
 
