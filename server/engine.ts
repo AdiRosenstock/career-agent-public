@@ -1,4 +1,5 @@
 import { candidateRestrictions, matchesTargets, roleFamilies, sponsorshipNotRequired } from '../shared/candidatePolicy.js';
+import { validProfileLinkUrl } from '../shared/profileLinks.js';
 import { createHash, randomUUID } from 'node:crypto';
 import { readFileSync, lstatSync } from 'node:fs';
 import type { Answer, AppSnapshot, AppState, ApplicationPacket, Board, CandidateDocument, CandidateProfile, DailyRun, FormQuestion, Job, ManualPreparationAllowance, PacketDraft, PriorApplication, Settings, SubmissionAttempt } from '../shared/types.js';
@@ -274,6 +275,7 @@ function supportedAnswer(s: AppState, answer: Answer, question: FormQuestion): b
  if (/^(?:legal|preferred) (?:first |last )?name$/i.test(answer.question.trim().replace(/\s*\*$/, ''))) return false;
  if (linkedinQuestion.test(answer.question.trim()) && answer.answer === s.profile.linkedin) return true;
  if (githubQuestion.test(answer.question.trim()) && answer.answer === s.profile.github) return true;
+ if (answer.factIds.length === 1 && /\b(?:link|url|website|portfolio|work sample)\b/i.test(answer.question) && !/\b(?:describe|explain|why|how)\b/i.test(answer.question) && !/textarea|long.text/i.test(question.type) && (s.profile.portfolioLinks || []).some(link => link.id === answer.factIds[0] && link.url === answer.answer)) return true;
  if (s.settings.applicationPreferences?.writtenAnswers !== 'draft' && s.settings.applicationPreferences) return false;
  return answer.factIds.length > 0 && answer.factIds.every(id => s.profile.facts.some(f => f.id === id && f.confirmed && !!f.source));
 }
@@ -327,6 +329,9 @@ function validateProfilePatch(s: AppState, patch: Partial<CandidateProfile>): vo
  if (patch.documents) {
   if (new Set(patch.documents.map(d => d.id)).size !== patch.documents.length) throw new AgentError('Registered document IDs must be unique', 400);
   for (const document of patch.documents) if (!documentValid(document)) throw new AgentError(`Document ${document.label} is missing, empty, or does not match its SHA256`);
+ }
+ if (patch.portfolioLinks) {
+  if (patch.portfolioLinks.length > 20 || new Set(patch.portfolioLinks.map(link => link.id)).size !== patch.portfolioLinks.length || new Set(patch.portfolioLinks.map(link => link.url.toLowerCase())).size !== patch.portfolioLinks.length || patch.portfolioLinks.some(link => !link.label.trim() || link.label.length > 120 || !validProfileLinkUrl(link.url) || link.url.length > 2000 || link.notes.length > 1000)) throw new AgentError('Choose up to 20 distinct, named HTTPS portfolio links without credentials or fragments', 400);
  }
 }
 function applyProfilePatch(s: AppState, patch: Partial<CandidateProfile>): void {

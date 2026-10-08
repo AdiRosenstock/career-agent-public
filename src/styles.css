@@ -4455,6 +4455,12 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 .start-self-id-group .start-field-note { margin:0 0 14px; }
 .start-self-id-group a { color:#235ad6; }
 .start-background-facts { border-top:1px solid var(--line); padding-top:20px; margin-top:4px; }
+.start-extra-links { border-top:1px solid var(--line); padding-top:20px; margin-top:4px; }
+.start-extra-links h3 { color:#304866; font-size:14px; margin:0 0 10px; }
+.start-link-card { border:1px solid #dce4f0; border-radius:8px; padding:16px 16px 2px; margin:14px 0; background:#fbfcff; }
+.start-link-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; font-size:13px; color:#304866; }
+.start-link-heading .button.text { color:#a23939; font-size:12px; padding:4px 0; }
+.start-extra-links > .button { margin:5px 0 8px; }
 .start-intake fieldset.start-self-id { border-left:3px solid #668de0; padding-left:18px; margin:15px 0 18px; }
 .start-save { display:flex; justify-content:space-between; align-items:center; gap:20px; padding-top:20px; margin-top:5px; border-top:1px solid var(--line); }
 .start-save p { display:flex; gap:8px; align-items:center; font-size:12px; line-height:1.5; color:#637189; }

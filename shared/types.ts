@@ -2,6 +2,7 @@ export type RoleFamily = 'product' | 'data' | 'finance' | 'consulting' | 'softwa
 export type SponsorshipStatus = 'explicit_yes' | 'history_only' | 'unknown' | 'explicit_no';
 export type JobStatus = 'open' | 'closed' | 'unknown';
 export interface Fact { id: string; label: string; value: string; source: string; confirmed: boolean }
+export interface CandidateLink { id: string; label: string; url: string; notes: string }
 export interface CandidateDocument {
  id: string; kind: 'transcript' | 'recommendation' | 'base_cover_letter'; label: string; filename: string;
  path: string; originalPath: string; sha256: string; addedAt: string; documentDate: string | null; notes: string;
@@ -9,6 +10,7 @@ export interface CandidateDocument {
 export interface CandidateProfile {
  name: string; email: string; phone: string; linkedin: string; github: string; graduation: string;
  facts: Fact[]; visaStatus: string; anticipatedOPT: boolean;
+ portfolioLinks?: CandidateLink[];
  authorizationNow: boolean | null; authorizationAtStart: boolean | null; futureSponsorship: boolean | null;
  usCitizen?: boolean | null; exportControlEligible?: boolean | null; clearanceEligible?: boolean | null;
  authorizationConfirmedAt: string | null; earliestStart: string | null; salaryPreference: string | null;

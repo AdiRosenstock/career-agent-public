@@ -54,8 +54,16 @@ test('saved intake refreshes clean values, preserves dirty edits, and keeps city
  await act(async () => { selfId('Ever held an insurance or securities industry license').value = 'No'; selfId('Ever held an insurance or securities industry license').dispatchEvent(new dom.window.Event('change', { bubbles: true })); });
  const educationHistory = Array.from(dom.window.document.querySelectorAll<HTMLTextAreaElement>('#start-background textarea')).find(element => element.closest('label')?.textContent?.includes('List your schools'))!;
  await act(async () => { Object.getOwnPropertyDescriptor(dom.window.HTMLTextAreaElement.prototype, 'value')!.set!.call(educationHistory, 'Midwest University, BS Mechanical Engineering, Chicago, 08/2022–05/2026.'); educationHistory.dispatchEvent(new dom.window.Event('input', { bubbles: true })); });
+ await act(async () => Array.from(dom.window.document.querySelectorAll<HTMLButtonElement>('#start-work-samples button')).find(button => button.textContent === 'Add another link')!.click());
+ const workLink = dom.window.document.querySelector<HTMLElement>('.start-link-card')!;
+ const setField = async (element: HTMLInputElement | HTMLTextAreaElement, value: string) => { await act(async () => { Object.getOwnPropertyDescriptor(element instanceof dom.window.HTMLTextAreaElement ? dom.window.HTMLTextAreaElement.prototype : dom.window.HTMLInputElement.prototype, 'value')!.set!.call(element, value); element.dispatchEvent(new dom.window.Event('input', { bubbles: true })); }); };
+ const linkInputs = workLink.querySelectorAll<HTMLInputElement>('input');
+ await setField(linkInputs[0], 'Mechanical design portfolio');
+ await setField(linkInputs[1], 'https://portfolio.example.test/mechanical');
+ await setField(workLink.querySelector<HTMLTextAreaElement>('textarea')!, 'Use for CAD and prototyping roles.');
  state = { ...state, settings: { ...state.settings, workplacePreference: 'hybrid' } }; await render();
  assert.equal(select.value, 'remote', 'Refresh must preserve a current unsaved choice');
+ assert.equal(workLink.querySelector<HTMLInputElement>('input')?.value, 'Mechanical design portfolio', 'Refresh must preserve an unsaved portfolio link');
  await act(async () => dom.window.document.querySelector('form')!.dispatchEvent(new dom.window.Event('submit', { bubbles: true, cancelable: true })));
  assert.equal(saved?.profile.name, 'Updated Example'); assert.deepEqual(saved?.settings.preferredLocations, ['Chicago, IL', 'Austin, TX']); assert.deepEqual(saved?.settings.targetEmployers, ['Northstar Labs', 'Acme Health']); assert.equal(saved?.settings.workplacePreference, 'remote');
  assert.equal(saved?.profile.savedAnswers?.find(answer => answer.question === 'Are you open to relocation?')?.answer, 'Yes');
@@ -69,4 +77,11 @@ test('saved intake refreshes clean values, preserves dirty edits, and keeps city
  assert.equal(saved?.profile.facts?.find(fact => fact.id === 'mechanical-projects')?.value, 'Designed and tested a student robot gripper in SolidWorks.');
  assert.equal(saved?.profile.facts?.find(fact => fact.id === 'startup-products')?.value, 'Shipped a scheduling feature used by 200 customers.');
  assert.equal(saved?.profile.facts?.find(fact => fact.id === 'education-history')?.value, 'Midwest University, BS Mechanical Engineering, Chicago, 08/2022–05/2026.');
+ assert.deepEqual(saved?.profile.portfolioLinks?.map(link => ({ label: link.label, url: link.url, notes: link.notes })), [{ label: 'Mechanical design portfolio', url: 'https://portfolio.example.test/mechanical', notes: 'Use for CAD and prototyping roles.' }]);
+ state = { ...state, profile: { ...state.profile, ...saved!.profile } }; await render();
+ await act(async () => buttons().find(button => button.textContent === 'Edit my saved preferences')!.click());
+ assert.equal(dom.window.document.querySelectorAll('.start-link-card').length, 1, 'Saved link is editable on a later visit');
+ await act(async () => dom.window.document.querySelector<HTMLButtonElement>('.start-link-card button')!.click());
+ await act(async () => dom.window.document.querySelector('form')!.dispatchEvent(new dom.window.Event('submit', { bubbles: true, cancelable: true })));
+ assert.deepEqual(saved?.profile.portfolioLinks, [], 'Removing a link clears it from the next saved profile');
 });

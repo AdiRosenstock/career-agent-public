@@ -53,11 +53,15 @@ test('fresh install accepts dashboard answers and original PDF without a termina
  assert.equal(initial.meta.resumeValid,false);
  assert.equal(initial.profile.resume.filename,'');
  assert.equal((await post('/api/resume/upload',{filename:'resume.txt',base64:Buffer.from('%PDF-1.4 fixture').toString('base64')})).status,400);
- const saved=await post('/api/onboarding',{profile:{name:'Taylor Example',email:'taylor@example.test',phone:'+1 202-555-0100',facts:[{id:'candidate-highlights',label:'Skills and experience highlights',value:'Python and SQL projects',source:'user:confirmed-dashboard',confirmed:true}],authorizationNow:true,authorizationAtStart:true,futureSponsorship:false,authorizationConfirmedAt:new Date().toISOString()},settings:{careerStage:'early_career',rolePriority:['data'],careerTargetsConfirmed:true,applicationPreferences:{writtenAnswers:'draft',formFilling:'agent',submission:'review',confirmedAt:new Date().toISOString(),automaticRiskAccepted:false}}});
+ const saved=await post('/api/onboarding',{profile:{name:'Taylor Example',email:'taylor@example.test',phone:'+1 202-555-0100',facts:[{id:'candidate-highlights',label:'Skills and experience highlights',value:'Python and SQL projects',source:'user:confirmed-dashboard',confirmed:true}],portfolioLinks:[{id:'portfolio-1',label:'Data projects',url:'https://portfolio.example.test/projects',notes:'Use for data roles asking for project links.'}],authorizationNow:true,authorizationAtStart:true,futureSponsorship:false,authorizationConfirmedAt:new Date().toISOString()},settings:{careerStage:'early_career',rolePriority:['data'],careerTargetsConfirmed:true,applicationPreferences:{writtenAnswers:'draft',formFilling:'agent',submission:'review',confirmedAt:new Date().toISOString(),automaticRiskAccepted:false}}});
  assert.equal(saved.status,200,await saved.text());
  const privateProfile=JSON.parse(await readFile(path.join(dataDir,'skills','candidate-profile','profile.json'),'utf8'));
  assert.equal(privateProfile.profile.name,'Taylor Example');
  assert.equal(privateProfile.profile.facts.find((fact:any)=>fact.id==='candidate-highlights').value,'Python and SQL projects');
+ assert.deepEqual(privateProfile.profile.portfolioLinks,[{id:'portfolio-1',label:'Data projects',url:'https://portfolio.example.test/projects',notes:'Use for data roles asking for project links.'}]);
+ assert.match(await readFile(path.join(dataDir,'skills','candidate-profile','SKILL.md'),'utf8'),/portfolioLinks.*factIds/);
+ assert.equal((await post('/api/profile',{portfolioLinks:[{id:'unsafe',label:'Unsafe',url:'javascript:alert(1)',notes:''}]})).status,400);
+ assert.deepEqual((await fetch(`${base}/api/state`).then(r=>r.json()) as any).profile.portfolioLinks,privateProfile.profile.portfolioLinks);
  assert.equal((await stat(path.join(dataDir,'skills','candidate-profile','profile.json'))).mode & 0o777,0o600);
  const pdf=Buffer.from('%PDF-1.4 original browser upload');
  const uploaded=await post('/api/resume/upload',{filename:'Original Resume.pdf',base64:pdf.toString('base64')});

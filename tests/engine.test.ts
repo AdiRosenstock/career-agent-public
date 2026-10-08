@@ -312,6 +312,23 @@ test('common profile-link wording is reused while legal names require confirmati
  assert.equal(packet.status, 'needs_input');
 });
 
+test('a saved work link supports an exact URL answer and becomes stale after editing the link', async t => {
+ const { engine } = await fixture(t);
+ await engine.updateProfile({ portfolioLinks: [{ id: 'work-link-1', label: 'Mechanical work', url: 'https://portfolio.example.test/cad', notes: 'Use for CAD roles.' }] });
+ const question = { id: 'work-link', label: 'Portfolio URL', required: true, type: 'text' };
+ await engine.upsertJob(job('work-link', { questions: [question] }));
+ const draft = await engine.prepare('work-link');
+ assert.equal(draft.status, 'needs_input');
+ const ready = await engine.editPacket(draft.id, { answers: [{ questionId: question.id, question: question.label, answer: 'https://portfolio.example.test/cad', factIds: ['work-link-1'], confirmed: true }] });
+ assert.equal(ready.status, 'ready');
+ await engine.updateProfile({ portfolioLinks: [{ id: 'work-link-1', label: 'Mechanical work', url: 'https://portfolio.example.test/new-cad', notes: 'Use for CAD roles.' }] });
+ const stale = (await engine.snapshot()).packets.find(packet => packet.id === draft.id)!;
+ assert.equal(stale.status, 'needs_input');
+ await engine.upsertJob(job('work-link-essay', { questions: [{ id: 'essay', label: 'Describe your portfolio', required: true, type: 'textarea' }] }));
+ const essay = await engine.prepare('work-link-essay', { answers: [{ questionId: 'essay', question: 'Describe your portfolio', answer: 'https://portfolio.example.test/new-cad', factIds: ['work-link-1'], confirmed: true }] });
+ assert.equal(essay.status, 'needs_input', 'A URL does not answer a narrative prompt');
+});
+
 test('atomic cap persists across independent stores, repeated prepare, and restart', async t => {
  const { engine, store, dir, seed, stores } = await fixture(t);
  const secondStore = await createStore({ backend: 'sqlite', dataDir: dir, seed }); stores.push(secondStore); const second = createEngine(secondStore, { now: () => NOW });
@@ -800,9 +817,9 @@ test('unknown and overlapping compensation never pass a configured floor', async
 
 test('legacy backups without optional enhancement fields retain approval validity and default safely', async t => {
  const { engine, store } = await fixture(t); const p = await approved(engine); const legacy = await store.read();
- delete legacy.profile.documents; delete legacy.priorApplications; delete legacy.settings.minimumAnnualCompensation; delete legacy.settings.compensationBasis; delete legacy.settings.preferredLocations; delete legacy.settings.workplacePreference;
+ delete legacy.profile.documents; delete legacy.profile.portfolioLinks; delete legacy.priorApplications; delete legacy.settings.minimumAnnualCompensation; delete legacy.settings.compensationBasis; delete legacy.settings.preferredLocations; delete legacy.settings.workplacePreference;
  for (const packet of legacy.packets) delete packet.attachments;
- const normalized = validateAppState(legacy); assert.deepEqual(normalized.profile.documents, []); assert.deepEqual(normalized.priorApplications, []);
+ const normalized = validateAppState(legacy); assert.deepEqual(normalized.profile.documents, []); assert.deepEqual(normalized.profile.portfolioLinks, []); assert.deepEqual(normalized.priorApplications, []);
  assert.equal(normalized.settings.minimumAnnualCompensation, null); assert.equal(normalized.settings.compensationBasis, 'base');
  assert.deepEqual(normalized.settings.preferredLocations, []); assert.equal(normalized.settings.workplacePreference, 'any');
  await store.update(s => { Object.assign(s, normalized); }); await engine.beginSubmission(p.id);

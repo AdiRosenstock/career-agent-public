@@ -1,5 +1,6 @@
 import Database from 'better-sqlite3';
 import { roleFamilies } from '../shared/candidatePolicy.js';
+import { validProfileLinkUrl } from '../shared/profileLinks.js';
 import { mkdirSync, chmodSync, readFileSync, writeFileSync, lstatSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join } from 'node:path';
@@ -15,10 +16,12 @@ const role = z.enum(roleFamilies);
 const source = z.enum(['greenhouse', 'lever', 'ashby']);
 const evidence = z.object({ id, status: z.enum(['explicit_yes', 'history_only', 'unknown', 'explicit_no']), sourceUrl: text, excerpt: text, checkedAt: text, employerName: text, scope: z.enum(['role', 'employer']), entityMatch: z.boolean() }).strict();
 const question = z.object({ id, label: text, required: z.boolean(), type: text, options: z.array(text).optional() }).strict();
+const portfolioLink = z.object({ id, label: z.string().trim().min(1).max(120), url: z.url().max(2000).refine(validProfileLinkUrl), notes: z.string().max(1000) }).strict();
 const schema = z.object({
  schemaVersion: z.literal(1),
  profile: z.object({ name: text, email: text, phone: text, linkedin: text, github: text, graduation: text,
   facts: z.array(z.object({ id, label: text, value: text, source: text, confirmed: z.boolean() }).strict()),
+  portfolioLinks: z.array(portfolioLink).max(20).optional().default([]),
   visaStatus: text, anticipatedOPT: z.boolean(), authorizationNow: z.boolean().nullable(), authorizationAtStart: z.boolean().nullable(), futureSponsorship: z.boolean().nullable(), usCitizen: z.boolean().nullable().optional(), exportControlEligible: z.boolean().nullable().optional(), clearanceEligible: z.boolean().nullable().optional(), authorizationConfirmedAt: nullable, earliestStart: nullable, salaryPreference: nullable,
   savedAnswers: z.array(z.object({ id, question: text, answer: text, confirmedAt: text }).strict()),
   resume: z.object({ path: text, sha256: z.string().regex(/^[a-f0-9]{64}$/), originalPath: text, filename: text }).strict(),
@@ -58,7 +61,7 @@ export function validatePriorApplications(history: PriorApplication[]): void {
 export function validateAppState(input: unknown): AppState {
  const s = schema.parse(input) as AppState;
  validatePriorApplications(s.priorApplications ?? []);
- for (const collection of [s.jobs, s.packets, s.approvals, s.attempts, s.runs, s.boards, s.profile.facts, s.profile.savedAnswers, s.profile.documents ?? [], s.priorApplications ?? [], s.manualPreparationAllowances ?? []]) {
+ for (const collection of [s.jobs, s.packets, s.approvals, s.attempts, s.runs, s.boards, s.profile.facts, s.profile.portfolioLinks ?? [], s.profile.savedAnswers, s.profile.documents ?? [], s.priorApplications ?? [], s.manualPreparationAllowances ?? []]) {
   if (new Set(collection.map(x => x.id)).size !== collection.length) throw new Error('Duplicate record ID in state');
  }
  const jobs = new Set(s.jobs.map(x => x.id)); const packets = new Set(s.packets.map(x => x.id));

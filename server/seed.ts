@@ -23,7 +23,7 @@ export async function createSeed(options: { resumePath?: string; originalPath?: 
  const state: AppState = {
   schemaVersion: 1,
   profile: {
-   name: '', email: '', phone: '', linkedin: '', github: '', graduation: '', facts: [],
+   name: '', email: '', phone: '', linkedin: '', github: '', graduation: '', facts: [], portfolioLinks: [],
    visaStatus: '', anticipatedOPT: false, authorizationNow: null, authorizationAtStart: null,
    futureSponsorship: null, authorizationConfirmedAt: null, earliestStart: null, salaryPreference: null, savedAnswers: [],
    resume: { path: resumePath ?? options.pendingResumePath!, originalPath, sha256, filename: resumePath ? basename(resumePath) : '' },
