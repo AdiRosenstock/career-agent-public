@@ -38,7 +38,7 @@ test('work context stays bounded as descriptions and application history grow; p
   state.packets[i].unresolved.push('long-question '.repeat(5000));
  }
  const before = JSON.stringify(state); const work = agentWork(state);
- assert.equal(work.next, 'complete_existing_packets'); assert.equal(work.packets.length, 8); assert.equal(work.morePackets, 52); assert.equal(work.nextOffset, 8);
+ assert.equal(work.next, 'complete_existing_packets'); assert.equal(work.packets.length, 5); assert.equal(work.morePackets, 55); assert.equal(work.nextOffset, 5);
  assert.equal(JSON.stringify(work).includes('large-source-evidence'), false); assert.equal(JSON.stringify(work).includes('large-private-cover-letter'), false);
  assert.ok(JSON.stringify(work).length < 10000); assert.ok(JSON.stringify(work).length < before.length / 100);
  assert.equal(JSON.stringify(state), before, 'Read-only work context cannot alter answers or approvals');

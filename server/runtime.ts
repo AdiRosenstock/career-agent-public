@@ -33,9 +33,8 @@ export async function openRuntime() {
  const seed = await createSeed(captured ? {resumePath,originalPath:source,profileSeedPath} : {pendingResumePath:resumePath,profileSeedPath});
  if(captured)seed.profile.resume.filename=path.basename(source);
  seed.settings.backend=backend;
- if(!seed.boards.length) seed.boards=[
-  ['ID.me','idmeuniversityrecruiting'], ['Databricks','databricks'], ['Stripe','stripe'], ['Optiver','optiverus'], ['IMC Trading','imc'], ['Roblox','roblox']
- ].map(([company,token])=>({id:`greenhouse:${token}`,company,source:'greenhouse',token,enabled:true,sponsorship:[]}));
+ // Employer feeds are candidate choices. Seeding the creator's employers on a
+ // fresh install wastes preparation capacity on unrelated careers.
  return seed;
  };
  const rawStore = await createStore({backend,dataDir,seed:initialState,supabaseUrl:process.env.SUPABASE_URL,supabaseServiceKey:process.env.SUPABASE_SECRET_KEY||process.env.SUPABASE_SERVICE_ROLE_KEY});

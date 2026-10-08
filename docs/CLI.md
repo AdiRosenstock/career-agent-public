@@ -34,7 +34,7 @@ Use `npm run agent -- help` for the executable contract and the [payload example
 
 ## Normal agent loop
 
-Start with `npm run agent -- work`, or add `--limit 5` for a smaller queue. Read `packet ID` only for the application being worked on. Save newly inspected form controls with `job-inspect`, and sourced answers or unresolved personal questions with `packet-edit`. The dashboard groups exact missing questions under **Review queue → Needs answers**; the agent should continue other jobs while answers are pending.
+Start with `npm run agent -- work` for a five-item queue; use `--offset N` to page or `--limit N` to change the batch size. Read `packet ID` only for the application being worked on. Save newly inspected form controls with `job-inspect`, and sourced answers or unresolved personal questions with `packet-edit`. The dashboard groups exact missing questions under **Review queue → Needs answers**; the agent should continue other jobs while answers are pending.
 
 `prepare-next` refreshes public feeds and creates initial drafts within the remaining daily cap; it does not inspect or fill every live form. Supplement it with employer research. For submission, read `work --batch BATCH_ID` and `approved BATCH_ID`, then recheck each actual form and call `begin` immediately before final Submit. Approval happens only on the dashboard. These CLI commands save records; browser tools perform actual employer interactions.
 

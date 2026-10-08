@@ -463,6 +463,23 @@ test('explicit new-graduate targets use the saved graduation year and month', ()
  assert.equal(assessJob(role,{careerStage:'new_grad'}).eligible,false);
  assert.equal(assessJob({...role,description:'Graduating in 2028. Starts February 2028.'},{careerStage:'new_grad',graduation:'2028-06'}).eligible,false);
 });
+test('early-career graduates do not auto-qualify for a later graduate cohort', () => {
+ const role = job({title:'2027 Graduate Hardware Engineer',description:'Full-time role for graduates in 2027. Build FPGA designs.'});
+ const older = assessJob(role,{careerStage:'early_career',graduation:'2024-06'});
+ assert.equal(older.eligible,false);
+ assert.match(older.eligibilityReasons.join(' '),/graduation cohort/);
+ assert.equal(assessJob(role,{careerStage:'early_career'}).eligible,false);
+ assert.equal(assessJob(role,{careerStage:'early_career',graduation:'2027-06'}).eligible,true);
+});
+test('structured minimum and maximum experience uses the minimum for early-career suitability', () => {
+ const role = job({title:'Mechanical Engineer',description:'Full-time mechanical design role. Experience: Min Yr = 1Max Yr = 3+.'});
+ const early = assessJob(role,{careerStage:'early_career',yearsExperience:2,graduation:'2024-06'});
+ assert.equal(early.eligible,true);
+ assert.equal(early.eligibilityReasons.includes('Graduate/entry-level suitability is not established by the posting'),false);
+ assert.equal(assessJob(role,{careerStage:'early_career',graduation:'2024-06'}).eligible,false);
+ assert.equal(assessJob(role,{careerStage:'early_career',yearsExperience:0,graduation:'2024-06'}).eligible,false);
+ assert.equal(assessJob(role,{careerStage:'experienced',yearsExperience:0}).eligible,false);
+});
 test('career classification separates mechanical, marketing, sales, design and operations', () => {
  for(const [title,family] of [['Mechanical Engineer','mechanical'],['Marketing Analyst','marketing'],['Sales Development Representative','sales'],['Product Designer','design'],['Supply Chain Analyst','operations'],['Software Engineer','software']]) assert.equal(job({title}).roleFamily,family);
 });

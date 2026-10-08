@@ -29,9 +29,9 @@ You need your own computer, internet access, **Codex or Claude Code with access 
 
 1. Open Codex or Claude Code on your computer and send the message below.
 2. Open the dashboard link it gives you. At the top of **Start here**, upload your original résumé PDF and, if available, a base cover letter PDF and transcript PDF. Then add your profile, degree, job interests, optional career page URLs, reusable answers, and choices for AI writing, form filling, and submission. Automatic submission has a separate warning because AI may make mistakes.
-3. Click **Search employer feeds now** to find and prepare roles from configured public boards. For a broader employer search and live form completion, choose your assistant and copy its preparation instruction into the same chat.
+3. New installs have no employer feeds selected. Add public Greenhouse, Lever, or Ashby boards in **Settings** if you want direct dashboard discovery, then click **Search employer feeds now**. For broader employer search and live form completion, copy the agent search instruction into Codex or Claude Code.
 4. Answer any missing personal questions in **Review queue → Needs answers**. Repeated questions can be answered together.
-5. Follow your submission choice: submit yourself, approve an exact batch, or ask your agent to find jobs and apply automatically after accepting the risk warning. The agent records actual confirmation evidence.
+5. Follow your submission choice: click Submit yourself, approve an exact batch, or ask your agent to find jobs and apply automatically after accepting the risk warning. Agent form filling and who clicks Submit are separate choices. The agent records actual confirmation evidence.
 
 **Copy this message to your assistant:**
 
@@ -77,7 +77,7 @@ The dashboard is the system of record. Codex or Claude Code handles research and
 | Complete applications | Your agent fills supported browser forms and can submit the exact batch you review, approve and ask it to execute |
 | Track outcomes | Keep handoffs, failures, confirmed submissions, and unknown outcomes distinct |
 
-The app does not run an invisible AI agent, store email credentials, take candidate assessments, bypass CAPTCHA, or guarantee compatibility with every employer form. A ready packet is not proof that a live form is complete.
+The app does not run an invisible AI agent, store email credentials, take candidate assessments, bypass CAPTCHA, or guarantee compatibility with every employer form. A ready packet contains local answers and documents; it is not proof that a live form is complete. Dashboard agent buttons copy instructions into your existing Codex or Claude Code chat.
 
 ## Quick start
 
@@ -235,7 +235,7 @@ See [architecture](docs/ARCHITECTURE.md) and [design decisions](docs/DESIGN_DECI
 - Improve confusing instructions, accessibility, filters, or the interface.
 - Build and test support for more countries, employer controls and agent tools.
 
-For code or documentation changes, read [Contributing](CONTRIBUTING.md). Fork the project, make your change, and open a pull request so it can be reviewed before it becomes part of the app. For a large change, open an issue first to discuss the approach. Use fictional examples; never share your résumé, application history, passwords or private screenshots.
+For code or documentation changes, read [Contributing](CONTRIBUTING.md) and the [customer QA and release plan](docs/QA_REMEDIATION.md). Fork the project, make your change, and open a pull request so it can be reviewed before it becomes part of the app. For a large change, open an issue first to discuss the approach. Use fictional examples; never share your résumé, application history, passwords or private screenshots.
 
 ## Development
 
@@ -275,7 +275,9 @@ In **Settings → Career targets**, select tracks and move them into your prefer
 order. Engineering covers mechanical, aerospace, propulsion, manufacturing,
 electrical and hardware careers. Use additional comma-separated role title terms
 for other interests (for example, teacher or nurse). These settings control feed
-selection, preparation priority and opportunity ordering. Existing saved jobs are
+selection, preparation priority and opportunity ordering. A selected career track
+does not prove every specialized requirement; inspect each posting and your
+confirmed experience before applying. Existing saved jobs are
 re-evaluated when targeting or profile answers change; affected approvals require
 fresh review.
 
