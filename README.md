@@ -1,10 +1,12 @@
 <div align="center">
 
-# Career Agent · Adi “The Goat” Rosenstock
+# Career Agent
 
-### Your local-first agent that finds, fills, and can submit job applications for you.
+### The Goat finds, fills, and can submit job applications for you.
 
-Choose your control level: submit yourself, approve exact batches, or ask Adi to apply for you.
+Created by [Adi Rosenstock](https://www.linkedin.com/in/adirosenstock) · [Portfolio](https://adirosenstock.github.io/)
+
+Choose your control level: submit yourself, approve exact batches, or ask The Goat to apply for you.
 
 [![CI](https://github.com/AdiRosenstock/career-agent-public/actions/workflows/ci.yml/badge.svg)](https://github.com/AdiRosenstock/career-agent-public/actions/workflows/ci.yml)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6)
@@ -23,7 +25,7 @@ Choose your control level: submit yourself, approve exact batches, or ask Adi to
 
 ## Start here: no coding experience needed
 
-Career Agent gives the shared Codex / Claude Code workflow a playful name: **Adi “The Goat” Rosenstock**. Adi can find suitable jobs, fill forms, submit applications under your selected mode, and keep the results in one place. **You do not need to write code or make an agent plan.** Save your details on the dashboard once, then let your assistant work from them. The name is a persona for the workflow; application answers always use your own verified profile.
+Career Agent calls its shared Codex / Claude Code job search workflow **The Goat**. The Goat can find suitable jobs, fill forms, submit applications under your selected mode, and keep the results in one place. **You do not need to write code or make an agent plan.** Save your details on the dashboard once, then let your assistant work from them. Adi Rosenstock created the project; application answers always use your own verified profile.
 
 You need your own computer, internet access, **Codex or Claude Code with access to that computer**, and your original résumé PDF before preparing applications. These assistants are separate products; Career Agent does not install or provide them. If you have neither, ask someone to help you set one up. You can also try the fictional demo before adding your résumé.
 
@@ -45,7 +47,7 @@ After setup, show me the GitHub Star link and invite me to star the project if
 I find it useful. Do not star from my account or make starring a setup requirement.
 ```
 
-The assistant handles installation. You may need to choose a file, approve a software installation, or sign in yourself. Personal answers belong on the dashboard, so you do not need a long chat interview. The dashboard can search configured public employer feeds; Codex or Claude Code expands the search and handles actual employer forms through its browser tools. Login, CAPTCHA and assessments may need your action. Agent subscriptions and external tools can have their own costs; this project's code is free. If Adi helps, please [star the repository on GitHub](https://github.com/AdiRosenstock/career-agent-public). Starring is optional and never affects setup or applications.
+The assistant handles installation. You may need to choose a file, approve a software installation, or sign in yourself. Personal answers belong on the dashboard, so you do not need a long chat interview. The dashboard can search configured public employer feeds; Codex or Claude Code expands the search and handles actual employer forms through its browser tools. Login, CAPTCHA and assessments may need your action. Agent subscriptions and external tools can have their own costs; this project's code is free. If The Goat helps, please [star the repository on GitHub](https://github.com/AdiRosenstock/career-agent-public). Starring is optional and never affects setup or applications.
 
 If you get stuck, tell the same assistant: **“I'm stuck at [what you see]. Fix it or show me the next click.”**
 
@@ -74,7 +76,7 @@ The dashboard is the system of record. Codex or Claude Code handles research and
 | Avoid duplicate applications | Match prior evidence by ATS identity, URL, requisition, and role; hold uncertain identities for review |
 | Prepare review packets | Track tailored answers, open questions, document choices, and content versions |
 | Preserve original documents | Copy PDFs without rewriting them and verify SHA-256 before use |
-| Complete applications | Adi fills supported browser forms and, if you choose, submits an exact approved batch or complete applications after your automatic submission risk acknowledgment and request to apply |
+| Complete applications | The Goat fills supported browser forms and, if you choose, submits an exact approved batch or complete applications after your automatic submission risk acknowledgment and request to apply |
 | Track outcomes | Keep handoffs, failures, confirmed submissions, and unknown outcomes distinct |
 
 The app does not run an invisible AI agent, store email credentials, take candidate assessments, bypass CAPTCHA, or guarantee compatibility with every employer form. A ready packet contains local answers and documents; it is not proof that a live form is complete. Dashboard agent buttons copy instructions into your existing Codex or Claude Code chat. The assistant can click the final Submit button in review or automatic mode when that mode's conditions are met.
@@ -151,7 +153,7 @@ in Needs answers and continue the other jobs. Follow my saved submission choice.
 
 The shared skill reads a compact work queue and saved preferences. It researches employers, inspects live forms, prepares sourced answers and fills the forms its browser can handle. You do not need to name companies, configure feeds or write a detailed plan first.
 
-For review mode, inspect exact answers and documents on the dashboard, approve the packets you want, then copy the submission instruction into the assistant's chat. This authorizes that specific batch; changed contents require another review. For automatic mode, accept the separate risk warning in **Start here**, choose agent form filling and agent-prepared answers, then ask Adi to find jobs and apply. Adi may submit complete current applications after fresh live checks. In self mode, you make the final Submit click. In every mode, the assistant records confirmation evidence and identifies any job requiring your action.
+For review mode, inspect exact answers and documents on the dashboard, approve the packets you want, then copy the submission instruction into the assistant's chat. This authorizes that specific batch; changed contents require another review. For automatic mode, accept the separate risk warning in **Start here**, choose agent form filling and agent-prepared answers, then ask The Goat to find jobs and apply. The Goat may submit complete current applications after fresh live checks. In self mode, you make the final Submit click. In every mode, the assistant records confirmation evidence and identifies any job requiring your action.
 
 The assistant selector generates instructions; it does **not** connect accounts or launch a background worker. Actual form work uses your own assistant's browser tools. If those are unavailable, the assistant prepares saved answers and records a manual handoff. See [agent setup](docs/AGENT_SETUP.md) and [connections](docs/CONNECTIONS.md) when a tool needs connecting. SQLite needs no external service; Supabase is optional.
 
@@ -265,7 +267,7 @@ Career Agent was created by **Adi Rosenstock**, a Costa Rican student studying D
 
 The architecture keeps candidate data private, checks original document integrity, and shares one workflow across Codex and Claude Code. Review mode requires current approval; automatic mode requires explicit risk acknowledgment and a complete current packet. Read the [architecture decisions](docs/ARCHITECTURE.md) for implementation details.
 
-[LinkedIn](https://www.linkedin.com/in/adirosenstock) · [GitHub](https://github.com/AdiRosenstock)
+[LinkedIn](https://www.linkedin.com/in/adirosenstock) · [Portfolio](https://adirosenstock.github.io/) · [GitHub](https://github.com/AdiRosenstock)
 
 Biography and portrait: [BanterBoost About page](https://fplbanterboost.com/about). The portrait is hosted there and is not covered by this repository's software license. Creator attribution does not supply application answers or identify the current workspace user.
 

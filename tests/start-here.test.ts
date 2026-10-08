@@ -34,7 +34,7 @@ test('saved intake refreshes clean values, preserves dirty edits, and keeps city
  const buttons = () => Array.from(dom.window.document.querySelectorAll('button'));
  await act(async () => buttons().find(button => button.textContent === 'Edit my saved preferences')!.click());
  const submissionOptions = Array.from(dom.window.document.querySelectorAll<HTMLInputElement>('input[name="submission-mode"]'));
- assert.deepEqual(submissionOptions.map(input => input.closest('label')?.querySelector('b')?.textContent), ['I click Submit', 'Adi submits batches I approve', 'Adi finds, fills, and submits for me']);
+ assert.deepEqual(submissionOptions.map(input => input.closest('label')?.querySelector('b')?.textContent), ['I click Submit', 'The Goat submits batches I approve', 'The Goat finds, fills, and submits for me']);
  assert.equal(submissionOptions.find(input => input.value === 'review')?.checked, true);
  await act(async () => submissionOptions.find(input => input.value === 'automatic')!.click());
  assert.match(dom.window.document.querySelector('.start-risk')?.textContent || '', /without my review of each one/);

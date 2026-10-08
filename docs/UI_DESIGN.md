@@ -1,6 +1,6 @@
 # Interface decisions
 
-Career Agent is a desktop application workspace with the shared agent persona Adi “The Goat” Rosenstock. The main dashboard opens directly onto saved roles, built-in filters, and the application table. A compact page header offers working shortcuts to opportunities and adding a job. A persistent creator link in the top bar keeps Adi's name visible on desktop and mobile and opens About Adi; page headings and the footer also credit him. The job seeker's name remains in the private profile area. Creator photography belongs on the About page. Start here displays all three submission choices as visible controls; automatic submission also displays the separate risk acknowledgment. The GitHub Star invitation is voluntary.
+Career Agent is a desktop application workspace with a shared agent workflow called The Goat, created by Adi Rosenstock. The main dashboard opens directly onto saved roles, built-in filters, and the application table. A compact page header offers working shortcuts to opportunities and adding a job. The top bar shows Adi's name beside separate LinkedIn and portfolio links; the creator credit above each page title links to LinkedIn. The job seeker's name remains in the private profile area. Creator photography belongs on the About page. Start here displays all three submission choices as visible controls; automatic submission also displays the separate risk acknowledgment. The GitHub Star invitation is voluntary.
 
 ## Visual direction
 
