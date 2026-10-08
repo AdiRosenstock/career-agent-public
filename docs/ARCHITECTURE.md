@@ -1,6 +1,6 @@
 # Architecture
 
-Career Agent separates a deterministic record system from agent-driven research and employer interactions. The shared Codex / Claude Code workflow uses the persona Adi “The Goat” Rosenstock; the persona is presentation only, while saved candidate facts are authoritative. The dashboard does not contain a model SDK or a generic employer submission API.
+Career Agent separates a deterministic record system from agent-driven research and employer interactions. The shared Codex / Claude Code workflow is called The Goat; Adi Rosenstock is the creator, and saved candidate facts are authoritative. The dashboard does not contain a model SDK or a generic employer submission API.
 
 ## Components
 
@@ -29,7 +29,7 @@ sequenceDiagram
     participant UI as Dashboard
     participant Engine
     participant Store
-    participant Agent as Adi in Codex / Claude Code
+    participant Agent as The Goat in Codex / Claude Code
     participant ATS as Employer browser
     Candidate->>UI: Confirm profile and criteria
     UI->>Engine: Validated update
