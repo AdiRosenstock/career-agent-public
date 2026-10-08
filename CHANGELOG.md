@@ -1,5 +1,12 @@
 # Changelog
 
+## Adi “The Goat” Rosenstock and submission choices — 2026-10-08
+
+- Branded the shared Codex / Claude Code agent workflow as Adi “The Goat” Rosenstock without using the creator's identity as a candidate profile.
+- Exposed self, approved-batch and automatic agent submission as three visible setup choices, with a separate risk acknowledgment for automatic submission.
+- Clarified that the agent can click Submit when the saved mode and current request authorize it.
+- Added an optional GitHub Star invitation to the installation prompt, setup output and dashboard.
+
 ## Public release preparation — 2026-10-01
 
 - Added first-run setup, Codex workflow, architecture, design rationale, configuration, CLI and troubleshooting documentation.

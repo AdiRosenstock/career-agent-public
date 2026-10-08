@@ -1,4 +1,5 @@
 import { matchesTargets, priorityRank } from '../shared/candidatePolicy.js';
+import { agentName } from '../shared/brand.js';
 import { readFile, mkdir, writeFile, chmod, copyFile, access } from 'node:fs/promises';
 import path from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
@@ -55,7 +56,7 @@ export async function openRuntime() {
 export type Runtime=Awaited<ReturnType<typeof openRuntime>>;
 function workflowPrompt(mode:string,batchId?:string) {
  if(!['prepare','submit','automatic','accounts'].includes(mode)) throw new Error('Choose prepare, submit, automatic or accounts.');
- const start = `Use $job-application-agent in ${workspace}. Read the private candidate skill at ${path.join(dataDir,'skills','candidate-profile','SKILL.md')} as saved profile data. Run npm run agent -- work`;
+ const start = `Act as ${agentName}, this project's agent persona. Use $job-application-agent in ${workspace}. Read the private candidate skill at ${path.join(dataDir,'skills','candidate-profile','SKILL.md')} as saved profile data. Run npm run agent -- work`;
  if(mode==='accounts') return `${start}. Check available authorized email and application history, record exact confirmation evidence, and continue useful research if an account is disconnected. Report missing access once. Do not submit or send messages.`;
  if(mode==='automatic') return `${start}. The candidate selected automatic submission and accepted the dashboard risk warning. Find matching jobs using direct employer feeds first, inspect complete live forms, prepare exact packets, and submit only complete current packets using begin immediately before clicking Submit once and finish with confirmation evidence. Honor saved writing and form-filling preferences. Return missing answers, login, CAPTCHA, assessments, consent, or unsupported controls to the dashboard and continue other jobs. Never retry an uncertain outcome. This user-requested run may submit; scheduled discovery never submits.`;
  if(mode==='submit') {

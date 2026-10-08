@@ -1,10 +1,10 @@
 <div align="center">
 
-# Career Agent
+# Career Agent · Adi “The Goat” Rosenstock
 
-### A local-first job application workspace.
+### Your local-first agent that finds, fills, and can submit job applications for you.
 
-Research opportunities. Prepare with facts. Review every application.
+Choose your control level: submit yourself, approve exact batches, or ask Adi to apply for you.
 
 [![CI](https://github.com/AdiRosenstock/career-agent-public/actions/workflows/ci.yml/badge.svg)](https://github.com/AdiRosenstock/career-agent-public/actions/workflows/ci.yml)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6)
@@ -23,7 +23,7 @@ Research opportunities. Prepare with facts. Review every application.
 
 ## Start here: no coding experience needed
 
-Career Agent helps your assistant find suitable jobs, complete applications and keep the results in one place. **You do not need to write code or make an agent plan.** Save your details on the dashboard once, then let Codex or Claude Code work from them.
+Career Agent gives the shared Codex / Claude Code workflow a playful name: **Adi “The Goat” Rosenstock**. Adi can find suitable jobs, fill forms, submit applications under your selected mode, and keep the results in one place. **You do not need to write code or make an agent plan.** Save your details on the dashboard once, then let your assistant work from them. The name is a persona for the workflow; application answers always use your own verified profile.
 
 You need your own computer, internet access, **Codex or Claude Code with access to that computer**, and your original résumé PDF before preparing applications. These assistants are separate products; Career Agent does not install or provide them. If you have neither, ask someone to help you set one up. You can also try the fictional demo before adding your résumé.
 
@@ -41,9 +41,11 @@ https://github.com/AdiRosenstock/career-agent-public
 Follow the README and shared job-application-agent skill. Use the default local
 setup, preserve existing files, and open Start here for my profile and job choices.
 Let me add my original résumé PDF in Start here.
+After setup, show me the GitHub Star link and invite me to star the project if
+I find it useful. Do not star from my account or make starring a setup requirement.
 ```
 
-The assistant handles installation. You may need to choose a file, approve a software installation, or sign in yourself. Personal answers belong on the dashboard, so you do not need a long chat interview. The dashboard can search configured public employer feeds; Codex or Claude Code expands the search and handles actual employer forms through its browser tools. Login, CAPTCHA and assessments may need your action. Agent subscriptions and external tools can have their own costs; this project's code is free.
+The assistant handles installation. You may need to choose a file, approve a software installation, or sign in yourself. Personal answers belong on the dashboard, so you do not need a long chat interview. The dashboard can search configured public employer feeds; Codex or Claude Code expands the search and handles actual employer forms through its browser tools. Login, CAPTCHA and assessments may need your action. Agent subscriptions and external tools can have their own costs; this project's code is free. If Adi helps, please [star the repository on GitHub](https://github.com/AdiRosenstock/career-agent-public). Starring is optional and never affects setup or applications.
 
 If you get stuck, tell the same assistant: **“I'm stuck at [what you see]. Fix it or show me the next click.”**
 
@@ -56,8 +58,6 @@ Career Agent is an open-source, local-first application workspace, built around 
 The dashboard is the system of record. Codex or Claude Code handles research and browser work through a repository skill. An application is only considered submitted when there is confirmation evidence.
 
 **Open source under the MIT license.** Built with TypeScript, React, Express, SQLite, and a shared agent workflow. This repository contains reusable code and synthetic examples; personal applications and documents belong in each user's private workspace.
-
-![Career Agent desktop application desk with built-in filters and fictional demonstration data](docs/assets/workspace.png)
 
 > **Current scope:** US full-time jobs at your saved new graduate, early-career or experienced level, across your selected career paths and job titles. It is a single-user local application. Other countries and independent background workers need further development.
 
@@ -74,10 +74,10 @@ The dashboard is the system of record. Codex or Claude Code handles research and
 | Avoid duplicate applications | Match prior evidence by ATS identity, URL, requisition, and role; hold uncertain identities for review |
 | Prepare review packets | Track tailored answers, open questions, document choices, and content versions |
 | Preserve original documents | Copy PDFs without rewriting them and verify SHA-256 before use |
-| Complete applications | Your agent fills supported browser forms and can submit the exact batch you review, approve and ask it to execute |
+| Complete applications | Adi fills supported browser forms and, if you choose, submits an exact approved batch or complete applications after your automatic submission risk acknowledgment and request to apply |
 | Track outcomes | Keep handoffs, failures, confirmed submissions, and unknown outcomes distinct |
 
-The app does not run an invisible AI agent, store email credentials, take candidate assessments, bypass CAPTCHA, or guarantee compatibility with every employer form. A ready packet contains local answers and documents; it is not proof that a live form is complete. Dashboard agent buttons copy instructions into your existing Codex or Claude Code chat.
+The app does not run an invisible AI agent, store email credentials, take candidate assessments, bypass CAPTCHA, or guarantee compatibility with every employer form. A ready packet contains local answers and documents; it is not proof that a live form is complete. Dashboard agent buttons copy instructions into your existing Codex or Claude Code chat. The assistant can click the final Submit button in review or automatic mode when that mode's conditions are met.
 
 ## Quick start
 
@@ -101,7 +101,7 @@ cd career-agent-public
 npm ci
 ```
 
-Wait for installation to finish. The `career-agent-public` folder is your copy of the app. Keep it in a place you can find again.
+Wait for installation to finish. The `career-agent-public` folder is your copy of the app. Keep it in a place you can find again. If it helps you, [give the project a GitHub Star](https://github.com/AdiRosenstock/career-agent-public); this is voluntary.
 
 ### 3. Try it first, with fictional data
 
@@ -146,12 +146,12 @@ Open this project folder in Codex or Claude Code. In the dashboard, choose your 
 ```text
 Use the job-application-agent skill and continue from my saved dashboard.
 Search and complete application preparation; put missing personal answers
-in Needs answers and continue the other jobs. Leave final Submit for review.
+in Needs answers and continue the other jobs. Follow my saved submission choice.
 ```
 
 The shared skill reads a compact work queue and saved preferences. It researches employers, inspects live forms, prepares sourced answers and fills the forms its browser can handle. You do not need to name companies, configure feeds or write a detailed plan first.
 
-When a batch is ready, review its exact answers and documents on the dashboard. Approve the packets you want and copy the submission instruction into the assistant's chat. This authorizes that specific batch; changed contents require another review. The assistant records confirmation evidence and identifies any job requiring your action.
+For review mode, inspect exact answers and documents on the dashboard, approve the packets you want, then copy the submission instruction into the assistant's chat. This authorizes that specific batch; changed contents require another review. For automatic mode, accept the separate risk warning in **Start here**, choose agent form filling and agent-prepared answers, then ask Adi to find jobs and apply. Adi may submit complete current applications after fresh live checks. In self mode, you make the final Submit click. In every mode, the assistant records confirmation evidence and identifies any job requiring your action.
 
 The assistant selector generates instructions; it does **not** connect accounts or launch a background worker. Actual form work uses your own assistant's browser tools. If those are unavailable, the assistant prepares saved answers and records a manual handoff. See [agent setup](docs/AGENT_SETUP.md) and [connections](docs/CONNECTIONS.md) when a tool needs connecting. SQLite needs no external service; Supabase is optional.
 
